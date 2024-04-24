@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>COOKIEMONSTER</title>
+    <style>
+* {
+  font-family: sans-serif;
+}
+body {
+  background: #eee;
+  font-size: 1.25em;
+  margin: 2em;
+}
+h1 {
+  font-family: fantasy;
+}
+pre,code {
+  font-family: monospace;
+  background: #eee;
+  border-radius: 0.2em;
+  padding: 0.5em;
+}
+code {
+  padding: 0.2em 1em;
+}
+.controls {
+  display: flex;
+  flex-direction: row;
+}
+input,button {
+  font-size: 1.5em;
+  height: 50px;
+  border: none;
+  border-radius: 0.2em;
+  padding: 0 0.75em;
+  flex: 1;
+}
+button {
+  background: #bdf;
+  margin-left: 0.25em;
+  transition: background 1s, box-shadow 0.2s;
+  cursor: pointer;
+  min-width: 15em;
+  flex: 0;
+}
+button:hover {
+  background: linear-gradient(to right, #dbf, #ffb);
+  box-shadow: 0 0 1em #fff;
+}
+input[type="url"] {
+  font-family: monospace;
+  width: 40em;
+}
+img {
+  box-shadow: 0 0 0.5em #ccc;
+}
+img:hover {
+  box-shadow: 0 0 1em #888;
+}
+.report-card {
+  background: white;
+  padding: 1em 2.5em 2.5em 2.5em;
+  margin: 2em;
+  border-radius: 0.25em;
+  box-shadow: 0 0 0.1em #ccc;
+}
+.datestring {
+  font-style: italic;
+  color: #888;
+}
+#spinner {
+  font-size: 3em;
+  display: none;
+  width: 3em;
+  height: 3em;
+  margin: auto;
+  text-align: center;
+  line-height: 3em;
+}
+#spinner.active {
+  display: block;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+    </style>
+  </head>
+  <body>
+    <h1>COOKIEMONSTER</h1>
+    <p>Enter a URL to scan it for cookie notices.</p>
+    <div class="controls">
+      <input type="url" id="url-input" name="url-input"/>
+      <button id="execute">Check for cookie notices ↪</button>
+    </div>
+    <div id="spinner">🍪</div>
+    <div id="reportlist"></div>
+    <script>
+      const urlInput = document.getElementById('url-input');
+      const executeButton = document.getElementById('execute');
+      const spinner = document.getElementById('spinner');
+      const reportList = document.getElementById('reportlist');
+
+      function createReportCard(report) {
+        const card = document.createElement('div');
+        card.classList.add('report-card');
+
+        const h2 = document.createElement('h2');
+        h2.textContent = 'Report for ';
+        const code = document.createElement('code');
+        code.textContent = report.url;
+        h2.appendChild(code);
+        card.appendChild(h2);
+
+        const datestring = document.createElement('p');
+        datestring.classList.add('datestring');
+        datestring.textContent = new Date(report.timestamp).toString();
+        card.appendChild(datestring);
+
+        if (report.error !== undefined) {
+          const p = document.createElement('p');
+          p.textContent = 'An error occurred:';
+          card.appendChild(p);
+          const pre = document.createElement('pre');
+          pre.textContent = report.error;
+          card.appendChild(pre);
+          return card;
+        }
+
+        if (report.identified !== true) {
+          const p = document.createElement('p');
+          p.textContent = 'No cookie consent notices were identified.';
+          card.appendChild(p);
+          return card;
+        }
+
+        const p = document.createElement('p');
+        p.textContent = 'A cookie consent notice was identified.';
+        card.appendChild(p);
+
+        if (report.screenshot !== undefined) {
+          const h3 = document.createElement('h3');
+          h3.textContent = 'Screenshot';
+          card.appendChild(h3);
+          const img = document.createElement('img');
+          img.src = 'data:image/webp;base64,' + report.screenshot;
+          card.appendChild(img);
+        }
+
+        return card;
+      }
+
+      executeButton.onclick = async () => {
+        urlInput.disabled = true;
+        executeButton.disabled = true;
+        spinner.classList.add('active');
+
+        const url = document.getElementById('url-input').value;
+        const report = await fetch('/check', {
+          method: 'POST',
+          cache: 'no-cache',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url,
+          }),
+        }).then(resp => resp.json());
+
+        const newCard = createReportCard(report);
+
+        if (reportList.children.length > 0) {
+          reportList.insertBefore(newCard, reportList.children[0]);
+        } else {
+          reportList.appendChild(newCard);
+        }
+        urlInput.value = '';
+        urlInput.disabled = false;
+        executeButton.disabled = false;
+        spinner.classList.remove('active');
+      };
+    </script>
+  </body>
+</html>
