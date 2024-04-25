@@ -69,7 +69,7 @@ export const checkPage = async (args) => {
           const screenshotB64 = await inPageResult.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' });
           report.screenshot = screenshotB64;
         }
-        report.markup = await inPageResult.evaluateHandle(e => e.outerHTML);
+        report.markup = await inPageResult.evaluate(e => e.outerHTML);
       }
     } catch(err) {
       report.error = err.message;
