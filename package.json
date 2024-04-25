@@ -10,6 +10,10 @@
     "@koa/bodyparser": "^5.1.1",
     "koa": "^2.15.3",
     "puppeteer-core": "^22.7.0",
+    "rehype-format": "^5.0.0",
+    "rehype-parse": "^9.0.0",
+    "rehype-stringify": "^10.0.0",
+    "unified": "^11.0.4",
     "xvfb": "^0.4.0"
   },
   "scripts": {

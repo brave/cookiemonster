@@ -87,6 +87,9 @@ img:hover {
     transform: rotate(360deg);
   }
 }
+details pre {
+  white-space: pre-wrap;
+}
     </style>
   </head>
   <body>
@@ -141,6 +144,20 @@ img:hover {
         const p = document.createElement('p');
         p.textContent = 'A cookie consent notice was identified.';
         card.appendChild(p);
+
+        if (report.markup !== undefined) {
+          const details = document.createElement('details');
+
+          const summary = document.createElement('summary');
+          summary.textContent = 'Inspect';
+          details.appendChild(summary);
+
+          const markup = document.createElement('pre');
+          markup.textContent = report.markup;
+          details.appendChild(markup);
+
+          card.appendChild(details);
+        }
 
         if (report.screenshot !== undefined) {
           const h3 = document.createElement('h3');

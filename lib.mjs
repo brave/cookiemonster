@@ -4,6 +4,11 @@ import fs from 'fs/promises';
 import os from 'os';
 import { setTimeout } from 'node:timers/promises';
 
+import rehypeFormat from 'rehype-format';
+import rehypeParse from 'rehype-parse';
+import rehypeStringify from 'rehype-stringify';
+import { unified } from 'unified';
+
 import Xvfb from 'xvfb';
 import puppeteer from 'puppeteer-core';
 
@@ -69,7 +74,11 @@ export const checkPage = async (args) => {
           const screenshotB64 = await inPageResult.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' });
           report.screenshot = screenshotB64;
         }
-        report.markup = await inPageResult.evaluate(e => e.outerHTML);
+        report.markup = String(await unified()
+          .use(rehypeParse, { fragment: true })
+          .use(rehypeFormat)
+          .use(rehypeStringify)
+          .process(await inPageResult.evaluate(e => e.outerHTML))).trim();
       }
     } catch(err) {
       report.error = err.message;
