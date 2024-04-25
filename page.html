@@ -24,7 +24,7 @@ pre,code {
 code {
   padding: 0.2em 1em;
 }
-.controls {
+#controls {
   display: flex;
   flex-direction: row;
 }
@@ -92,10 +92,10 @@ img:hover {
   <body>
     <h1>COOKIEMONSTER</h1>
     <p>Enter a URL to scan it for cookie notices.</p>
-    <div class="controls">
-      <input type="url" id="url-input" name="url-input"/>
-      <button id="execute">Check for cookie notices ↪</button>
-    </div>
+    <form id="controls">
+      <input type="url" id="url-input" name="url-input" placeholder="https://example.com" autofocus/>
+      <button type="submit" id="execute">Check for cookie notices ↪</button>
+    </form>
     <div id="spinner">🍪</div>
     <div id="reportlist"></div>
     <script>
@@ -103,6 +103,7 @@ img:hover {
       const executeButton = document.getElementById('execute');
       const spinner = document.getElementById('spinner');
       const reportList = document.getElementById('reportlist');
+      const form = document.getElementById('controls');
 
       function createReportCard(report) {
         const card = document.createElement('div');
@@ -153,7 +154,9 @@ img:hover {
         return card;
       }
 
-      executeButton.onclick = async () => {
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+
         urlInput.disabled = true;
         executeButton.disabled = true;
         spinner.classList.add('active');
