@@ -1,10 +1,9 @@
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import process from 'process';
 
 const profilePathForArgs = async (args) => {
-  const templateProfile = args.existingProfilePath || path.join(process.cwd(), 'profiles', 'ELC_off');
+  const templateProfile = args.existingProfilePath || path.join(import.meta.dirname, '..', 'profiles', 'ELC_off');
 
   // Create a new temporary location for the profile and copy to it.
   const destProfilePath = await fs.mkdtemp(path.join(os.tmpdir(), 'pagegraph-profile-' ))

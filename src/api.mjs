@@ -1,6 +1,7 @@
 // Entrypoint for the API server.
 
 import fs from 'fs/promises';
+import path from 'path';
 import process from 'process';
 
 import Koa from 'koa';
@@ -18,7 +19,7 @@ app.use(bodyParser());
 
 app.use(async ctx => {
   if (ctx.request.path === '/') {
-    ctx.body = await fs.readFile('./page.html');
+    ctx.body = await fs.readFile(path.join(import.meta.dirname, 'page.html'));
     ctx.response.type = 'html';
     return;
   } else if (ctx.request.path === '/check') {

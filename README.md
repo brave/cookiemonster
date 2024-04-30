@@ -22,7 +22,7 @@ You can safely close the browser after this step.
 Run the following:
 
 ```
-node api.mjs
+npm run serve
 ```
 
 ...then visit `localhost:3000` in your browser.
