@@ -66,6 +66,10 @@ export const checkPage = async (args) => {
     const inPageResult = await page.evaluateHandle(inPageRoutine);
     try {
       if (await inPageResult.evaluate(r => r !== undefined)) {
+        let l = await inPageResult.evaluate(r => r.length);
+        if (l !== undefined && l > 1) {
+          throw new Error('Too many candidate elements detected (' + l + ')');
+        }
         report.identified = true;
         const boundingBox = await inPageResult.boundingBox();
         if (boundingBox.height === 0 || boundingBox.width === 0) {
