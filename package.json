@@ -17,6 +17,7 @@
     "xvfb": "^0.4.0"
   },
   "scripts": {
-    "serve": "node api.mjs"
+    "serve": "node api.mjs",
+    "test": "node test.mjs"
   }
 }

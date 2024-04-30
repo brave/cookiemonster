@@ -25,7 +25,6 @@ export const puppeteerConfigForArgs = async (args) => {
     ignoreDefaultArgs: [
       '--disable-sync'
     ],
-    dumpio: args.debugLevel !== 'none',
     headless: false
   }
 
