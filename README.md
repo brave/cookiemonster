@@ -27,6 +27,33 @@ npm run serve
 
 ...then visit `localhost:3000` in your browser.
 
+If needed, you can pass a path to a different browser binary, and a different port to run on, e.g.:
+
+```
+npm run serve -- /usr/bin/brave-nightly 8000
+```
+
 ## Using as a library
 
-Import the `checkPage` function from `lib.mjs`.
+```js
+import { checkPage } from 'cookiemonster';
+
+const result = await checkPage({
+  url: 'https://example.com',       // URL to visit
+  seconds: 4,                       // delay before checking for a notice
+  interactive: false,               // show the browser while running?
+  executablePath: '/path/to/binary' // what browser to run
+});
+```
+
+## Testing
+
+```
+npm run test
+```
+
+You can also pass a path to a different browser binary if necessary:
+
+```
+npm run test -- /usr/bin/brave-nightly
+```
