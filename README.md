@@ -6,16 +6,13 @@ I eat cookie consent notices. **Nom nom**.
 
 ## Setup
 
-For testing without EasyList Cookie enabled, you'll need to initialize a suitable browser profile for the automated browser to use.
-
-This can be done by starting the browser from the command line as follows:
-
+Install dependencies and then setup browser profiles for future use:
 ```
-/path/to/brave --user-data-dir ./profiles/ELC_off
+npm install
+npm run setup -- /path/to/brave
 ```
 
-Then navigate to `brave://settings/shields/filters` and disable `EasyList Cookie`.
-You can safely close the browser after this step.
+If the browser profiles need to be updated, remove the `profiles` directory and run the `setup` script again.
 
 ## Running
 
@@ -39,10 +36,11 @@ npm run serve -- /usr/bin/brave-nightly 8000
 import { checkPage } from 'cookiemonster';
 
 const result = await checkPage({
-  url: 'https://example.com',       // URL to visit
-  seconds: 4,                       // delay before checking for a notice
-  interactive: false,               // show the browser while running?
-  executablePath: '/path/to/binary' // what browser to run
+  url: 'https://example.com',        // URL to visit
+  seconds: 4,                        // delay before checking for a notice
+  interactive: false,                // show the browser while running?
+  executablePath: '/path/to/binary', // what browser to run
+  disableCookieList: true,           // ignore rules from EasyList Cookie?
 });
 ```
 

@@ -2,13 +2,18 @@ import { pathToFileURL } from 'url';
 import { createHash } from 'crypto';
 import path from 'path';
 
-import { checkPage } from './lib.mjs';
+import { checkPage, prepareProfile } from './lib.mjs';
 
-const browser_binary_path = process.argv[2] || '/usr/bin/brave';
+const args = {
+  seconds: 0,
+  interactive: false,
+  executablePath: process.argv[2] || '/usr/bin/brave',
+  disableCookieList: true,
+};
 
 async function testPage(testCasePath, expectedHash) {
   const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href;
-  return checkPage({ url, seconds: 0, interactive: false, executablePath: browser_binary_path }).then(r => {
+  return checkPage({ url, ...args }).then(r => {
     if (r.error) {
       console.log('[' + testCasePath + '] ERROR: ' + r.error)
       return false;
@@ -51,7 +56,7 @@ const testCases = [
   ['zora.co', 'ZQGVsHwN2dm4XfAmUeYQeV2b0eJxM45CFdQtDyeVjU0='],
 ];
 
-let p = Promise.resolve();
+let p = prepareProfile(args);
 for (const [testCase, expectedHash] of testCases) {
   p = p.then(() => testPage(testCase, expectedHash));
 }

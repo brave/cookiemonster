@@ -1,24 +1,11 @@
-import fs from 'fs/promises';
-import os from 'os';
-import path from 'path';
-
-const profilePathForArgs = async (args) => {
-  const templateProfile = args.existingProfilePath || path.join(import.meta.dirname, '..', 'profiles', 'ELC_off');
-
-  // Create a new temporary location for the profile and copy to it.
-  const destProfilePath = await fs.mkdtemp(path.join(os.tmpdir(), 'pagegraph-profile-' ))
-  await fs.cp(templateProfile, destProfilePath, { recursive: true })
-
-  return destProfilePath
-}
+import { templateProfilePathForArgs } from './util.mjs';
 
 export const puppeteerConfigForArgs = async (args) => {
-  const pathForProfile = await profilePathForArgs(args)
   const puppeteerArgs = {
     defaultViewport: null,
     args: [
       '--disable-brave-update',
-      '--user-data-dir=' + pathForProfile
+      '--user-data-dir=' + (args.pathForProfile || templateProfilePathForArgs(args)),
     ],
     executablePath: args.executablePath,
     ignoreDefaultArgs: [
@@ -36,5 +23,5 @@ export const puppeteerConfigForArgs = async (args) => {
     puppeteerArgs.args.push(...args.extraArgs)
   }
 
-  return { puppeteerArgs, pathForProfile }
+  return puppeteerArgs;
 }

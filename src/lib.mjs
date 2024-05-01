@@ -1,7 +1,9 @@
 'use strict'
 
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import os from 'os';
+import path from 'path';
 import { setTimeout } from 'node:timers/promises';
 
 import rehypeFormat from 'rehype-format';
@@ -14,15 +16,16 @@ import puppeteer from 'puppeteer-core';
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs';
+import { templateProfilePathForArgs } from './util.mjs';
 
-const setupEnv = (args) => {
+const setupEnv = (interactive) => {
   const xvfbPlatforms = new Set(['linux', 'openbsd'])
 
   const platformName = os.platform()
 
   let closeFunc
 
-  if (args.interactive) {
+  if (interactive) {
     closeFunc = () => { }
   } else if (xvfbPlatforms.has(platformName)) {
     const xvfbHandle = new Xvfb({
@@ -45,9 +48,16 @@ const setupEnv = (args) => {
 export const checkPage = async (args) => {
   const url = args.url;
 
-  const { puppeteerArgs, pathForProfile } = await puppeteerConfigForArgs(args)
+  const templateProfile = templateProfilePathForArgs(args);
 
-  const envHandle = setupEnv(args)
+  // Only operate on a copy of the template profile
+  const workingProfile = await fs.mkdtemp(path.join(os.tmpdir(), 'cookiemonster-profile-' ))
+  await fs.cp(templateProfile, workingProfile, { recursive: true })
+  args.pathForProfile = workingProfile;
+
+  const puppeteerArgs = await puppeteerConfigForArgs(args)
+
+  const envHandle = setupEnv(args.interactive)
 
   const report = {
     url,
@@ -98,9 +108,53 @@ export const checkPage = async (args) => {
 
     envHandle.close()
 
-    // cleanup temp profile
-    await fs.rm(pathForProfile, { recursive: true });
+    await fs.rm(workingProfile, { recursive: true });
   }
 
   return report;
+}
+
+export const prepareProfile = async (args) => {
+  const { executablePath, interactive, disableCookieList } = args;
+
+  const templateProfile = templateProfilePathForArgs(args);
+  if (existsSync(templateProfile)) {
+    // Template profile already exists; return early
+    return;
+  }
+
+  console.log('Performing initial profile setup...');
+
+  const puppeteerArgs = await puppeteerConfigForArgs(args)
+
+  const envHandle = setupEnv(interactive)
+
+  const browser = await puppeteer.launch(puppeteerArgs);
+
+  // Give the browser some time to update adblock components
+  await setTimeout(10000);
+
+  const page = await browser.newPage();
+  await page.goto('brave://settings/shields/filters', { waitUntil: 'domcontentloaded' });
+
+  // Toggle the EasyList Cookie entry to the intended setting
+  await page.evaluate(async (ELC_enabled) => {
+    // Unfortunately this seems like the only way to select all the way through the shadow roots...
+    const browserProxy = document.querySelectorAll('settings-ui')[0].shadowRoot
+        .getElementById('main').shadowRoot
+        .querySelectorAll('settings-basic-page')[0].shadowRoot
+        .querySelectorAll('settings-default-brave-shields-page')[0].shadowRoot
+        .querySelectorAll('adblock-subpage')[0]
+        .browserProxy_;
+
+    await browserProxy.enableFilterList('AC023D22-AE88-4060-A978-4FEEEC4221693', ELC_enabled);
+  }, !Boolean(disableCookieList));
+
+  await page.close();
+
+  await browser.close();
+
+  envHandle.close();
+
+  console.log('Done. Profile has been cached for future use.');
 }
