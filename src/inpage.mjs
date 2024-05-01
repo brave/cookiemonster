@@ -57,21 +57,33 @@ export function inPageRoutine() {
       return e.innerText.match(/reject/) !== null
     },
   ];
-  const contentCheckedElements = [];
-  for (const node of fixedPositionElements) {
+  const contentCheckedElements = fixedPositionElements.filter(node => {
     for (const contentCheck of contentChecks) {
       if (contentCheck(node)) {
-        contentCheckedElements.push(node);
-        break;
+        return true;
       }
     }
-  }
+    return false;
+  });
 
-  if (contentCheckedElements.length === 1) {
-    return contentCheckedElements[0];
-  } else if (contentCheckedElements.length === 0) {
+  const documentRect = document.documentElement.getBoundingClientRect();
+
+  const visibleElements = contentCheckedElements.filter(node => {
+    const nodeRect = node.getBoundingClientRect();
+    if (nodeRect.left >= documentRect.right ||
+        nodeRect.right <= documentRect.left ||
+        nodeRect.top >= documentRect.bottom ||
+        nodeRect.bottom <= documentRect.top) {
+      return false;
+    }
+    return true;
+  });
+
+  if (visibleElements.length === 1) {
+    return visibleElements[0];
+  } else if (visibleElements.length === 0) {
     return undefined;
   } else {
-    return contentCheckedElements;
+    return visibleElements;
   }
 }
