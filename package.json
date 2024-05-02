@@ -6,6 +6,13 @@
     "type": "git",
     "url": "https://github.com/brave-experiments/cookiemonster"
   },
+  "scripts": {
+    "setup": "node src/setup.mjs",
+    "serve": "node src/api.mjs",
+    "test": "node src/test.mjs",
+    "lint": "standard",
+    "lint-fix": "standard --fix"
+  },
   "main": "src/lib.mjs",
   "dependencies": {
     "@koa/bodyparser": "^5.1.1",
@@ -17,9 +24,7 @@
     "unified": "^11.0.4",
     "xvfb": "^0.4.0"
   },
-  "scripts": {
-    "setup": "node src/setup.mjs",
-    "serve": "node src/api.mjs",
-    "test": "node src/test.mjs"
+  "devDependencies": {
+    "standard": "^17.1.0"
   }
 }
