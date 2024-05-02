@@ -1,11 +1,11 @@
-import { templateProfilePathForArgs } from './util.mjs';
+import { templateProfilePathForArgs } from './util.mjs'
 
 export const puppeteerConfigForArgs = async (args) => {
   const puppeteerArgs = {
     defaultViewport: null,
     args: [
       '--disable-brave-update',
-      '--user-data-dir=' + (args.pathForProfile || templateProfilePathForArgs(args)),
+      '--user-data-dir=' + (args.pathForProfile || templateProfilePathForArgs(args))
     ],
     executablePath: args.executablePath,
     ignoreDefaultArgs: [
@@ -23,5 +23,5 @@ export const puppeteerConfigForArgs = async (args) => {
     puppeteerArgs.args.push(...args.extraArgs)
   }
 
-  return puppeteerArgs;
+  return puppeteerArgs
 }

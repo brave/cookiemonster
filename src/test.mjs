@@ -1,37 +1,37 @@
-import { pathToFileURL } from 'url';
-import { createHash } from 'crypto';
-import path from 'path';
+import { pathToFileURL } from 'url'
+import { createHash } from 'crypto'
+import path from 'path'
 
-import { checkPage, prepareProfile } from './lib.mjs';
+import { checkPage, prepareProfile } from './lib.mjs'
 
 const args = {
   seconds: 0,
   interactive: false,
   executablePath: process.argv[2] || '/usr/bin/brave',
-  disableCookieList: true,
-};
+  disableCookieList: true
+}
 
-async function testPage(testCasePath, expectedHash) {
-  const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href;
+async function testPage (testCasePath, expectedHash) {
+  const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href
   return checkPage({ url, ...args }).then(r => {
     if (r.error) {
       console.log('[' + testCasePath + '] ERROR: ' + r.error)
-      return false;
+      return false
     }
 
-    let markupHash;
+    let markupHash
     if (r.identified) {
-      markupHash = createHash('sha256').update(r.markup).digest('base64');
+      markupHash = createHash('sha256').update(r.markup).digest('base64')
     }
 
     if (expectedHash !== markupHash) {
-      console.log('[' + testCasePath + '] expected hash "' + expectedHash + '" did not match markup "' + markupHash + '"');
-      return false;
+      console.log('[' + testCasePath + '] expected hash "' + expectedHash + '" did not match markup "' + markupHash + '"')
+      return false
     } else {
-      console.log('[' + testCasePath + '] success');
-      return true;
+      console.log('[' + testCasePath + '] success')
+      return true
     }
-  });
+  })
 }
 
 const testCases = [
@@ -53,12 +53,12 @@ const testCases = [
   ['www.kellanova.com', 'aZxeT/PGvgW5wcPMCkeXGJlXw88lC/GfEEJY+0bUXBU='],
   ['www.meld.io', 'SrMn/AlL+1vb9Ob9MneGIdHzuDVdK0QzOfBpLbBatCQ='],
   ['www.wardvillage.com', 'RiDcFOm/YVgP1DuCErIfD5/Va9KAXFoem+Pdcn2qZLA='],
-  ['zora.co', 'ZQGVsHwN2dm4XfAmUeYQeV2b0eJxM45CFdQtDyeVjU0='],
-];
+  ['zora.co', 'ZQGVsHwN2dm4XfAmUeYQeV2b0eJxM45CFdQtDyeVjU0=']
+]
 
-let p = prepareProfile(args);
+let p = prepareProfile(args)
 for (const [testCase, expectedHash] of testCases) {
-  p = p.then(() => testPage(testCase, expectedHash));
+  p = p.then(() => testPage(testCase, expectedHash))
 }
 
-await p;
+await p
