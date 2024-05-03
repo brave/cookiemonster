@@ -1,6 +1,9 @@
+/* eslint-env browser */
+
 // This is the main routine that runs within a page and returns information about detected elements.
 // This function should be 100% self-contained - puppeteer does not transfer dependencies to the page's JS context.
 export function inPageRoutine () {
+  /* TODO: never used
   function containsMainPageContent (e) {
     // main page content: Content that should not be hidden by a rule in the cookie list. This can be determined using heuristics like the overall size of the HTML tree, the presence of semantic elements like nav or section, the amount of text, etc.
     if (e.querySelector('nav') !== null) {
@@ -13,6 +16,7 @@ export function inPageRoutine () {
       return true
     }
   }
+  */
 
   const fixedPositionElements = []
   const walker = document.createTreeWalker(
