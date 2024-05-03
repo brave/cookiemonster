@@ -9,9 +9,9 @@ import { bodyParser } from '@koa/bodyparser'
 
 import { checkPage } from './lib.mjs'
 
-const browser_binary_path = process.argv[2] || '/usr/bin/brave'
+const browserBinaryPath = process.argv[2] || '/usr/bin/brave'
 const port = process.argv[3] || 3000
-console.log(`Browser binary: ${browser_binary_path}`)
+console.log(`Browser binary: ${browserBinaryPath}`)
 console.log(`Port: ${port}`)
 
 const app = new Koa()
@@ -27,7 +27,7 @@ app.use(async ctx => {
       url,
       seconds: seconds || 4,
       interactive: false,
-      executablePath: browser_binary_path
+      executablePath: browserBinaryPath
     })
     ctx.body = JSON.stringify(report)
   }

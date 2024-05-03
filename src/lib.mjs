@@ -115,7 +115,7 @@ export const checkPage = async (args) => {
 }
 
 export const prepareProfile = async (args) => {
-  const { executablePath, interactive, disableCookieList } = args
+  const { /* executablePath, */ interactive, disableCookieList } = args
 
   const templateProfile = templateProfilePathForArgs(args)
   if (existsSync(templateProfile)) {
@@ -138,7 +138,7 @@ export const prepareProfile = async (args) => {
   await page.goto('brave://settings/shields/filters', { waitUntil: 'domcontentloaded' })
 
   // Toggle the EasyList Cookie entry to the intended setting
-  await page.evaluate(async (ELC_enabled) => {
+  await page.evaluate(async (easyListCookieEnabled) => {
     // Unfortunately this seems like the only way to select all the way through the shadow roots...
     const browserProxy = document.querySelectorAll('settings-ui')[0].shadowRoot
       .getElementById('main').shadowRoot
@@ -147,7 +147,7 @@ export const prepareProfile = async (args) => {
       .querySelectorAll('adblock-subpage')[0]
       .browserProxy_
 
-    await browserProxy.enableFilterList('AC023D22-AE88-4060-A978-4FEEEC4221693', ELC_enabled)
+    await browserProxy.enableFilterList('AC023D22-AE88-4060-A978-4FEEEC4221693', easyListCookieEnabled)
   }, !disableCookieList)
 
   await page.close()
