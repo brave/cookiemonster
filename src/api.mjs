@@ -1,6 +1,7 @@
 // Entrypoint for the API server.
 
 import fs from 'fs/promises'
+import { existsSync } from 'fs'
 import path from 'path'
 import process from 'process'
 
@@ -11,6 +12,13 @@ import { checkPage } from './lib.mjs'
 
 const browserBinaryPath = process.argv[2] || '/usr/bin/brave'
 const port = process.argv[3] || 3000
+
+if (!existsSync(browserBinaryPath)) {
+  console.error(`Path ${browserBinaryPath} does not exist.`)
+  console.error(`Please specify an alternative on the command line.`)
+  process.exit(-1)
+}
+
 console.log(`Browser binary: ${browserBinaryPath}`)
 console.log(`Port: ${port}`)
 
@@ -27,7 +35,8 @@ app.use(async ctx => {
       url,
       seconds: seconds || 4,
       interactive: false,
-      executablePath: browserBinaryPath
+      executablePath: browserBinaryPath,
+      disableCookieList: true
     })
     ctx.body = JSON.stringify(report)
   }
