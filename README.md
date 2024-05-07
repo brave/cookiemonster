@@ -55,3 +55,10 @@ You can also pass a path to a different browser binary if necessary:
 ```
 npm run test -- /usr/bin/brave-nightly
 ```
+
+### Generating test cases
+
+There is a set of regression test cases in the `testcases` directory.
+
+Each test case is a single self-contained HTML file.
+These files can be generated using a tool like [nodeSavePageWE](https://github.com/markusmobius/nodeSavePageWE).
