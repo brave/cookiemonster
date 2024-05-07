@@ -15,7 +15,7 @@ const port = process.argv[3] || 3000
 
 if (!existsSync(browserBinaryPath)) {
   console.error(`Path ${browserBinaryPath} does not exist.`)
-  console.error(`Please specify an alternative on the command line.`)
+  console.error('Please specify an alternative on the command line.')
   process.exit(-1)
 }
 
