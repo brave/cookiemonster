@@ -6,6 +6,8 @@ I eat cookie consent notices. **Nom nom**.
 
 ## Setup
 
+Install [Brave Browser](https://brave.com/linux/), and [xvfb](https://www.x.org/releases/X11R7.6/doc/man/man1/Xvfb.1.xhtml), which is required for optimal headless operation.
+
 Install dependencies and then setup browser profiles for future use:
 ```
 npm install
