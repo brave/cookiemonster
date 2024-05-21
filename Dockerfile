@@ -20,7 +20,7 @@ COPY . /app
 RUN npm install
 
 USER node
-RUN xvfb-run -e /dev/stdout -s "-screen 0 1280x1024x24 -ac -nolisten tcp -nolisten unix" npm run setup -- ${BRAVE_BINARY}
+RUN npm run setup -- ${BRAVE_BINARY}
 
 EXPOSE 3000
 CMD npm run serve -- ${BRAVE_BINARY} 3000
