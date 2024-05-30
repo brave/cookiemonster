@@ -16,6 +16,8 @@
   "main": "src/lib.mjs",
   "dependencies": {
     "@koa/bodyparser": "^5.1.1",
+    "aws-xray-sdk-core": "^3.6.0",
+    "aws-xray-sdk-koa2": "^3.6.0",
     "koa": "^2.15.3",
     "puppeteer-core": "^22.7.0",
     "rehype-format": "^5.0.0",

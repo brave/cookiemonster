@@ -5,6 +5,8 @@ import { existsSync } from 'fs'
 import path from 'path'
 import process from 'process'
 
+import xrayKoa from 'aws-xray-sdk-koa2'
+
 import Koa from 'koa'
 import { bodyParser } from '@koa/bodyparser'
 
@@ -23,6 +25,7 @@ console.log(`Browser binary: ${browserBinaryPath}`)
 console.log(`Port: ${port}`)
 
 const app = new Koa()
+app.use(xrayKoa.openSegment('default'))
 app.use(bodyParser())
 
 app.use(async ctx => {
@@ -36,7 +39,8 @@ app.use(async ctx => {
       seconds: seconds || 4,
       interactive: false,
       executablePath: browserBinaryPath,
-      disableCookieList: true
+      disableCookieList: false,
+      debugLevel: 'verbose'
     })
     ctx.body = JSON.stringify(report)
   }

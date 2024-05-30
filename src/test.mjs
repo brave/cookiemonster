@@ -1,6 +1,7 @@
 import { pathToFileURL } from 'url'
 import { createHash } from 'crypto'
 import path from 'path'
+import AWSXRay from 'aws-xray-sdk-core'
 
 import { checkPage, prepareProfile } from './lib.mjs'
 
@@ -10,6 +11,8 @@ const args = {
   executablePath: process.argv[2] || '/usr/bin/brave',
   disableCookieList: true
 }
+
+AWSXRay.setContextMissingStrategy((msg) => {}) // suppress errors if X-Ray is not configured
 
 async function testPage (testCasePath, expectedHash) {
   const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href
