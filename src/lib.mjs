@@ -11,6 +11,7 @@ import rehypeParse from 'rehype-parse'
 import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
 
+import AWSXRay from 'aws-xray-sdk-core'
 import Xvfb from 'xvfb'
 import puppeteer from 'puppeteer-core'
 
@@ -29,8 +30,9 @@ const setupEnv = (interactive) => {
     closeFunc = () => { }
   } else if (xvfbPlatforms.has(platformName)) {
     const xvfbHandle = new Xvfb({
+      timeout: 5000,
       // ensure 24-bit color depth or rendering might choke
-      xvfb_args: ['-screen', '0', '1024x768x24']
+      xvfb_args: ['-screen', '0', '1024x768x24', '-ac', '-nolisten', 'tcp']
     })
     xvfbHandle.startSync()
     closeFunc = () => {
@@ -64,7 +66,16 @@ export const checkPage = async (args) => {
     timestamp: Date.now()
   }
 
+  const segment = AWSXRay.getSegment()
+  let browserLaunchSegment
+  if (segment) {
+    browserLaunchSegment = segment.addNewSubsegment('launch_browser')
+  }
   const browser = await puppeteer.launch(puppeteerArgs)
+  if (segment) {
+    browserLaunchSegment.close()
+  }
+
   const page = await browser.newPage()
 
   try {
