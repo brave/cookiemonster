@@ -198,7 +198,7 @@ details pre {
         spinner.classList.add('active');
 
         const url = document.getElementById('url-input').value;
-        const report = await fetch('/check', {
+        const newCard = await fetch('/check', {
           method: 'POST',
           cache: 'no-cache',
           headers: {
@@ -208,9 +208,10 @@ details pre {
             url,
             disableCookieList: !elcToggle.checked,
           }),
-        }).then(resp => resp.json());
-
-        const newCard = createReportCard(report);
+        })
+          .then(resp => resp.json())
+          .then(report => createReportCard(report, url))
+          .catch(error => createReportCard({ error, url, timestamp: new Date() }));
 
         if (reportList.children.length > 0) {
           reportList.insertBefore(newCard, reportList.children[0]);
