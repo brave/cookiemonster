@@ -26,9 +26,19 @@ code {
 }
 #controls {
   display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.row {
+  display: flex;
   flex-direction: row;
 }
-input,button {
+fieldset {
+  border: 2px solid #ddd;
+  border-radius: 0.2em;
+  color: #888;
+}
+input[type="url"],button {
   font-size: 1.5em;
   height: 50px;
   border: none;
@@ -96,13 +106,21 @@ details pre {
     <h1>cookiemonster</h1>
     <p>Enter a URL to scan it for cookie notices.</p>
     <form id="controls">
-      <input type="url" id="url-input" name="url-input" placeholder="https://example.com" autofocus/>
-      <button type="submit" id="execute">Check for cookie notices ↪</button>
+      <div class="row">
+        <input type="url" id="url-input" name="url-input" placeholder="https://example.com" autofocus/>
+        <button type="submit" id="execute">Check for cookie notices ↪</button>
+      </div>
+      <fieldset>
+        <legend>Additional settings</legend>
+        <input type="checkbox" id="easylist-cookie" name="easylist-cookie" checked/>
+        <label for="easylist-cookie">Use EasyList Cookie</label>
+      </fieldset>
     </form>
     <div id="spinner">🍪</div>
     <div id="reportlist"></div>
     <script>
       const urlInput = document.getElementById('url-input');
+      const elcToggle = document.getElementById('easylist-cookie');
       const executeButton = document.getElementById('execute');
       const spinner = document.getElementById('spinner');
       const reportList = document.getElementById('reportlist');
@@ -175,6 +193,7 @@ details pre {
         e.preventDefault();
 
         urlInput.disabled = true;
+        elcToggle.disabled = true;
         executeButton.disabled = true;
         spinner.classList.add('active');
 
@@ -187,6 +206,7 @@ details pre {
           },
           body: JSON.stringify({
             url,
+            disableCookieList: !elcToggle.checked,
           }),
         }).then(resp => resp.json());
 
@@ -199,6 +219,7 @@ details pre {
         }
         urlInput.value = '';
         urlInput.disabled = false;
+        elcToggle.disabled = false;
         executeButton.disabled = false;
         spinner.classList.remove('active');
       };

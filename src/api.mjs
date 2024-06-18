@@ -33,13 +33,13 @@ app.use(async ctx => {
     ctx.body = await fs.readFile(path.join(import.meta.dirname, 'page.html'))
     ctx.response.type = 'html'
   } else if (ctx.request.path === '/check') {
-    const { url, seconds } = ctx.request.body
+    const { url, seconds, disableCookieList } = ctx.request.body
     const report = await checkPage({
       url,
       seconds: seconds || 4,
       interactive: false,
       executablePath: browserBinaryPath,
-      disableCookieList: false,
+      disableCookieList,
       debugLevel: 'verbose'
     })
     ctx.body = JSON.stringify(report)
