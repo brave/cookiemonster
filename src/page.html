@@ -7,13 +7,26 @@
 * {
   font-family: sans-serif;
 }
+html {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 body {
   background: #eee;
   font-size: 1.25em;
   margin: 2em;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 h1 {
   font-family: Poppins, fantasy;
+  margin: unset;
+}
+footer a[href] {
+  color: #8ad;
+  text-decoration: none;
 }
 pre,code {
   font-family: monospace;
@@ -118,6 +131,9 @@ details pre {
     </form>
     <div id="spinner">🍪</div>
     <div id="reportlist"></div>
+    <footer>
+      <a href="https://github.com/brave/cookiemonster">Source code</a>
+    </footer>
     <script>
       const urlInput = document.getElementById('url-input');
       const elcToggle = document.getElementById('easylist-cookie');
