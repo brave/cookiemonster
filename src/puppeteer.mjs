@@ -7,8 +7,17 @@ export const puppeteerConfigForArgs = async (args) => {
     args: [
       '--disable-brave-update',
       '--no-sandbox',
+      '--no-zygote',
       '--disable-gpu',
-      '--single-process',
+      '--disable-gpu-compositing',
+      '--disable-gpu-early-init',
+      '--disable-gpu-memory-buffer-compositor-resources',
+      '--disable-gpu-memory-buffer-video-frames',
+      '--disable-gpu-program-cache',
+      '--disable-gpu-rasterization',
+      '--disable-gpu-sandbox',
+      '--disable-gpu-vsync',
+      '--disable-gpu-watchdog',
       '--user-data-dir=' + (args.pathForProfile || templateProfilePathForArgs(args))
     ],
     executablePath: args.executablePath,
