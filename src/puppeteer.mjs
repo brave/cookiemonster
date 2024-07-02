@@ -11,6 +11,7 @@ export const puppeteerConfigForArgs = async (args) => {
       '--disable-3d-apis',
       '--disable-gpu',
       '--disable-accelerated-2d-canvas',
+      '--disable-software-rasterizer',
       '--disable-gpu-compositing',
       '--disable-gpu-early-init',
       '--disable-partial-raster',
