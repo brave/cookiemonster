@@ -15,6 +15,8 @@ export const puppeteerConfigForArgs = async (args) => {
       '--disable-gpu-compositing',
       '--disable-gpu-early-init',
       '--disable-partial-raster',
+      '--disable-mojo-renderer',
+      '--use-gl="swiftshader"',
       '--disable-gpu-memory-buffer-compositor-resources',
       '--disable-gpu-memory-buffer-video-frames',
       '--disable-gpu-process-for-dx12-info-collection',
