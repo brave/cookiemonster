@@ -7,15 +7,20 @@ export const puppeteerConfigForArgs = async (args) => {
     args: [
       '--disable-brave-update',
       '--no-sandbox',
+      '--disable-setuid-sandbox',
       '--disable-gpu',
-      '--single-process',
+      '--in-process-gpu',
+      '--no-zygote',
+      '--enable-features=NetworkServiceInProcess2',
+      //'--single-process',
       '--user-data-dir=' + (args.pathForProfile || templateProfilePathForArgs(args))
     ],
     executablePath: args.executablePath,
     ignoreDefaultArgs: [
-      '--disable-sync'
+      '--disable-sync',
+      '--user-data-dir'
     ],
-    headless: false
+    headless: true
   }
 
   if (args.debugLevel === 'verbose') {

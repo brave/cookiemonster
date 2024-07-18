@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=$DEBIAN_FRONTEND
 ENV AWS_LWA_PORT=3000
 
 RUN apt-get -qq update && \
-    apt-get -qy install curl xvfb libasound2 libgtk-3-0 xdg-utils python3-minimal
+    apt-get -qy install curl libasound2 libgtk-3-0 xdg-utils python3-minimal
 
 WORKDIR /app
 COPY package*.json /app

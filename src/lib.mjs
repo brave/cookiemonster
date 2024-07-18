@@ -13,39 +13,13 @@ import { unified } from 'unified'
 
 import AWSXRay from 'aws-xray-sdk-core'
 import Xvfb from 'xvfb'
-import puppeteer from 'puppeteer-core'
+import puppeteer from 'puppeteer-extra'
+import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
 import { templateProfilePathForArgs } from './util.mjs'
 
-const setupEnv = (interactive) => {
-  const xvfbPlatforms = new Set(['linux', 'openbsd'])
-
-  const platformName = os.platform()
-
-  let closeFunc
-
-  if (interactive) {
-    closeFunc = () => { }
-  } else if (xvfbPlatforms.has(platformName)) {
-    const xvfbHandle = new Xvfb({
-      timeout: 5000,
-      // ensure 24-bit color depth or rendering might choke
-      xvfb_args: ['-screen', '0', '1024x768x24', '-ac', '-nolisten', 'tcp']
-    })
-    xvfbHandle.startSync()
-    closeFunc = () => {
-      xvfbHandle.stopSync()
-    }
-  } else {
-    closeFunc = () => {}
-  }
-
-  return {
-    close: closeFunc
-  }
-}
 
 export const checkPage = async (args) => {
   const url = args.url
@@ -59,8 +33,6 @@ export const checkPage = async (args) => {
 
   const puppeteerArgs = await puppeteerConfigForArgs(args)
 
-  const envHandle = setupEnv(args.interactive)
-
   const report = {
     url,
     timestamp: Date.now()
@@ -71,7 +43,7 @@ export const checkPage = async (args) => {
   if (segment) {
     browserLaunchSegment = segment.addNewSubsegment('launch_browser')
   }
-  const browser = await puppeteer.launch(puppeteerArgs)
+  const browser = await puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
   if (segment) {
     browserLaunchSegment.close()
   }
@@ -117,7 +89,6 @@ export const checkPage = async (args) => {
 
     await browser.close()
 
-    envHandle.close()
 
     await fs.rm(workingProfile, { recursive: true })
   }
@@ -137,8 +108,6 @@ export const prepareProfile = async (args) => {
   console.log('Performing initial profile setup...')
 
   const puppeteerArgs = await puppeteerConfigForArgs(args)
-
-  const envHandle = setupEnv(interactive)
 
   const browser = await puppeteer.launch(puppeteerArgs)
 
@@ -165,7 +134,9 @@ export const prepareProfile = async (args) => {
 
   await browser.close()
 
-  envHandle.close()
+
+  // Clean up stale Singleton Lock
+  await fs.rm(`${templateProfile}/SingletonLock`, { force: true })
 
   console.log('Done. Profile has been cached for future use.')
 }
