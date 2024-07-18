@@ -24,19 +24,26 @@ import { templateProfilePathForArgs } from './util.mjs'
 export const checkPage = async (args) => {
   const url = args.url
 
-  const templateProfile = templateProfilePathForArgs(args)
-
-  // Only operate on a copy of the template profile
-  const workingProfile = await fs.mkdtemp(path.join(os.tmpdir(), 'cookiemonster-profile-'))
-  await fs.cp(templateProfile, workingProfile, { recursive: true })
-  args.pathForProfile = workingProfile
-
-  const puppeteerArgs = await puppeteerConfigForArgs(args)
-
   const report = {
     url,
     timestamp: Date.now()
   }
+
+  const templateProfile = templateProfilePathForArgs(args)
+
+  // Only operate on a copy of the template profile
+  const workingProfile = await fs.mkdtemp(path.join(os.tmpdir(), 'cookiemonster-profile-'))
+  try {
+    await fs.cp(templateProfile, workingProfile, { recursive: true })
+  } catch (err) {
+    await fs.rm(workingProfile, { recursive: true })
+    report.error = err.message
+    return report
+  }
+
+  args.pathForProfile = workingProfile
+
+  const puppeteerArgs = await puppeteerConfigForArgs(args)
 
   const segment = AWSXRay.getSegment()
   let browserLaunchSegment
