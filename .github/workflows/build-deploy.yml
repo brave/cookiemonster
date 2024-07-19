@@ -43,7 +43,7 @@ jobs:
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
-        uses: docker/bake-action@867da3c87234f4c7f38b518e44d350206ce8798a # v5.2.0
+        uses: docker/bake-action@dbdf67d511c64f5af9363b359bf1c3c94a92fcfd # v5.3.0
         with:
           push: true
           targets: brave #,chromium
