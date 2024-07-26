@@ -4,6 +4,12 @@
 
 I eat cookie consent notices. **Nom nom**.
 
+Cookiemonster automatically detects cookie notices on Web pages. It's intended to help with both detection of cookie notices that we don't currently block, and to identify webcompat reports as being related to cookie consent blocking. 
+
+## Deployment status
+
+Cookiemonster is currently being developed as a Web app which will help us run crawls and/or integrate with the webcompat reporter backend. It can also be [used as a library](using-as-a-library). In the future, we could even bundle it in the browser.
+
 ## Setup
 
 Install [Brave Browser](https://brave.com/linux/), and [xvfb](https://www.x.org/releases/X11R7.6/doc/man/man1/Xvfb.1.xhtml), which is required for optimal headless operation.
