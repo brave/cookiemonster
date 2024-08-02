@@ -17,7 +17,7 @@ export const templateProfilePathForArgs = ({ pathForProfile }) => {
  * @returns {boolean} - Returns true if the ID is valid, otherwise false
  */
 export const isValidChromeComponentId = ({ id }) => {
-  return chromeComponentIdPattern.test(id?.trim())
+  return chromeComponentIdPattern.test(id)
 }
 
 export const getExtensionVersion = (extensionDir) => {

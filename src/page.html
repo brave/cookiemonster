@@ -144,19 +144,19 @@ details pre {
         const adblock_lists = await fetch('/adblock_lists.json').then(response => response.json());
         const fieldset = document.getElementById('adblock-lists');
         for (const [uuid, name] of Object.entries(adblock_lists)) {
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = uuid;
-            checkbox.name = name;
-            checkbox.checked = true;
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = uuid;
+          checkbox.name = name;
+          checkbox.checked = true;
 
-            const label = document.createElement('label');
-            label.htmlFor = uuid;
-            label.textContent = name;
+          const label = document.createElement('label');
+          label.htmlFor = uuid;
+          label.textContent = name;
 
-            fieldset.appendChild(checkbox);
-            fieldset.appendChild(label);
-            fieldset.appendChild(document.createElement('br'));
+          fieldset.appendChild(checkbox);
+          fieldset.appendChild(label);
+          fieldset.appendChild(document.createElement('br'));
         }
       });
 
@@ -266,7 +266,6 @@ details pre {
         }
         urlInput.value = '';
         urlInput.disabled = false;
-        // elcToggle.disabled  // TODO: handle new adblock lists element
         executeButton.disabled = false;
         spinner.classList.remove('active');
       };
