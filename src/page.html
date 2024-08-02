@@ -234,6 +234,9 @@ details pre {
 
         urlInput.disabled = true;
         executeButton.disabled = true;
+        for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {
+          checkbox.disabled = true;
+        }
         spinner.classList.add('active');
 
         const url = document.getElementById('url-input').value;
@@ -266,6 +269,9 @@ details pre {
         }
         urlInput.value = '';
         urlInput.disabled = false;
+        for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {
+          checkbox.disabled = false;
+        }
         executeButton.disabled = false;
         spinner.classList.remove('active');
       };
