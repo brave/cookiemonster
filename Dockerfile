@@ -1,6 +1,6 @@
 # Base application image
 FROM node:lts-slim
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.3 /lambda-adapter /opt/extensions/lambda-adapter
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 /lambda-adapter /opt/extensions/lambda-adapter
 
 ARG CHANNEL=nightly # release, beta, nightly
 ARG PACKAGE_NAME=brave-browser-${CHANNEL}
