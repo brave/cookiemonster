@@ -4,18 +4,19 @@ export const puppeteerConfigForArgs = async (args) => {
   const puppeteerArgs = {
     defaultViewport: null,
     timeout: 0,
+    userDataDir: args.pathForProfile || templateProfilePathForArgs(args),
     args: [
       '--disable-brave-update',
       '--no-sandbox',
+      '--disable-setuid-sandbox',
       '--disable-gpu',
-      '--single-process',
-      '--user-data-dir=' + (args.pathForProfile || templateProfilePathForArgs(args))
+      '--disable-features=BraveAdblockCookieListDefault,BraveAdblockMobileNotificationsListDefault'
     ],
     executablePath: args.executablePath,
     ignoreDefaultArgs: [
       '--disable-sync'
     ],
-    headless: false
+    headless: true
   }
 
   if (args.debugLevel === 'verbose') {

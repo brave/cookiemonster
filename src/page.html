@@ -129,10 +129,8 @@ details pre {
         <input type="url" id="url-input" name="url-input" placeholder="https://example.com" autofocus/>
         <button type="submit" id="execute">Check for cookie notices ↪</button>
       </div>
-      <fieldset>
-        <legend>Additional settings</legend>
-        <input type="checkbox" id="easylist-cookie" name="easylist-cookie" checked/>
-        <label for="easylist-cookie">Use EasyList Cookie</label>
+      <fieldset id="adblock-lists">
+        <legend>Enabled lists</legend>
       </fieldset>
     </form>
     <div id="spinner">🍪</div>
@@ -140,9 +138,29 @@ details pre {
     <footer>
       <a href="https://github.com/brave/cookiemonster">Source code</a>
     </footer>
-    <script>
+    <script type="module">
+      document.addEventListener("DOMContentLoaded", async function() {
+        // Fetch the adblock lists JSON data
+        const adblock_lists = await fetch('/adblock_lists.json').then(response => response.json());
+        const fieldset = document.getElementById('adblock-lists');
+        for (const [uuid, name] of Object.entries(adblock_lists)) {
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = uuid;
+          checkbox.name = name;
+          checkbox.checked = true;
+
+          const label = document.createElement('label');
+          label.htmlFor = uuid;
+          label.textContent = name;
+
+          fieldset.appendChild(checkbox);
+          fieldset.appendChild(label);
+          fieldset.appendChild(document.createElement('br'));
+        }
+      });
+
       const urlInput = document.getElementById('url-input');
-      const elcToggle = document.getElementById('easylist-cookie');
       const executeButton = document.getElementById('execute');
       const spinner = document.getElementById('spinner');
       const reportList = document.getElementById('reportlist');
@@ -215,11 +233,20 @@ details pre {
         e.preventDefault();
 
         urlInput.disabled = true;
-        elcToggle.disabled = true;
         executeButton.disabled = true;
+        for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {
+          checkbox.disabled = true;
+        }
         spinner.classList.add('active');
 
         const url = document.getElementById('url-input').value;
+
+        const fieldset = document.getElementById('adblock-lists');
+        const checkboxes = fieldset.querySelectorAll('input[type="checkbox"]');
+        const adblockLists = Array.from(checkboxes).reduce((acc, checkbox) => {
+                acc[checkbox.id] = checkbox.checked;
+                return acc;
+            }, {});
         const newCard = await fetch('/check', {
           method: 'POST',
           cache: 'no-cache',
@@ -228,7 +255,7 @@ details pre {
           },
           body: JSON.stringify({
             url,
-            disableCookieList: !elcToggle.checked,
+            adblockLists: adblockLists,
           }),
         })
           .then(resp => resp.json())
@@ -242,7 +269,9 @@ details pre {
         }
         urlInput.value = '';
         urlInput.disabled = false;
-        elcToggle.disabled = false;
+        for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {
+          checkbox.disabled = false;
+        }
         executeButton.disabled = false;
         spinner.classList.remove('active');
       };

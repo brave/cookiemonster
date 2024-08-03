@@ -1,6 +1,6 @@
 'use strict'
 
-import { existsSync } from 'fs'
+import { existsSync, readdirSync, cpSync, mkdirSync, writeFileSync } from 'fs'
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
@@ -12,66 +12,43 @@ import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
 
 import AWSXRay from 'aws-xray-sdk-core'
-import Xvfb from 'xvfb'
-import puppeteer from 'puppeteer-core'
+import puppeteer from 'puppeteer-extra'
+import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
-import { templateProfilePathForArgs } from './util.mjs'
-
-const setupEnv = (interactive) => {
-  const xvfbPlatforms = new Set(['linux', 'openbsd'])
-
-  const platformName = os.platform()
-
-  let closeFunc
-
-  if (interactive) {
-    closeFunc = () => { }
-  } else if (xvfbPlatforms.has(platformName)) {
-    const xvfbHandle = new Xvfb({
-      timeout: 5000,
-      // ensure 24-bit color depth or rendering might choke
-      xvfb_args: ['-screen', '0', '1024x768x24', '-ac', '-nolisten', 'tcp']
-    })
-    xvfbHandle.startSync()
-    closeFunc = () => {
-      xvfbHandle.stopSync()
-    }
-  } else {
-    closeFunc = () => {}
-  }
-
-  return {
-    close: closeFunc
-  }
-}
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, replaceVersion, getAdblockUuids, toggleAdblocklists } from './util.mjs'
 
 export const checkPage = async (args) => {
   const url = args.url
-
-  const templateProfile = templateProfilePathForArgs(args)
-
-  // Only operate on a copy of the template profile
-  const workingProfile = await fs.mkdtemp(path.join(os.tmpdir(), 'cookiemonster-profile-'))
-  await fs.cp(templateProfile, workingProfile, { recursive: true })
-  args.pathForProfile = workingProfile
-
-  const puppeteerArgs = await puppeteerConfigForArgs(args)
-
-  const envHandle = setupEnv(args.interactive)
 
   const report = {
     url,
     timestamp: Date.now()
   }
 
+  const templateProfile = templateProfilePathForArgs(args)
+  // Only operate on a copy of the template profile
+  const workingProfile = await fs.mkdtemp(path.join(os.tmpdir(), 'cookiemonster-profile-'))
+
+  try {
+    await fs.cp(templateProfile, workingProfile, { recursive: true })
+  } catch (err) {
+    await fs.rm(workingProfile, { recursive: true })
+    report.error = err.message
+    return report
+  }
+  const listCatalogPath = path.join(workingProfile, 'gkboaolpopklhgplhaaiboijnklogmbc', '999.999', 'list_catalog.json')
+  toggleAdblocklists(listCatalogPath, args.adblockLists)
+
+  const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile })
+
   const segment = AWSXRay.getSegment()
   let browserLaunchSegment
   if (segment) {
     browserLaunchSegment = segment.addNewSubsegment('launch_browser')
   }
-  const browser = await puppeteer.launch(puppeteerArgs)
+  const browser = await puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
   if (segment) {
     browserLaunchSegment.close()
   }
@@ -117,55 +94,86 @@ export const checkPage = async (args) => {
 
     await browser.close()
 
-    envHandle.close()
-
     await fs.rm(workingProfile, { recursive: true })
   }
-
   return report
 }
 
 export const prepareProfile = async (args) => {
-  const { /* executablePath, */ interactive, disableCookieList } = args
-
+  const tmpProfile = await fs.mkdtemp(path.join(os.tmpdir(), 'cookiemonster-setup-profile-'))
   const templateProfile = templateProfilePathForArgs(args)
+
   if (existsSync(templateProfile)) {
     // Template profile already exists; return early
+    console.log('profile directory already exists')
     return
+  } else {
+    // Create template profile directory
+    await fs.mkdir(templateProfile)
   }
 
   console.log('Performing initial profile setup...')
-
-  const puppeteerArgs = await puppeteerConfigForArgs(args)
-
-  const envHandle = setupEnv(interactive)
+  const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: tmpProfile })
 
   const browser = await puppeteer.launch(puppeteerArgs)
 
-  // Give the browser some time to update adblock components
-  await setTimeout(10000)
-
   const page = await browser.newPage()
-  await page.goto('brave://settings/shields/filters', { waitUntil: 'domcontentloaded' })
+  // Give the browser some time to download adblock components
+  await setTimeout(3000)
 
-  // Toggle the EasyList Cookie entry to the intended setting
-  await page.evaluate(async (easyListCookieEnabled) => {
-    // Unfortunately this seems like the only way to select all the way through the shadow roots...
-    const browserProxy = document.querySelectorAll('settings-ui')[0].shadowRoot
-      .getElementById('main').shadowRoot
-      .querySelectorAll('settings-basic-page')[0].shadowRoot
-      .querySelectorAll('settings-default-brave-shields-page')[0].shadowRoot
-      .querySelectorAll('adblock-subpage')[0]
-      .browserProxy_
+  console.log('Updating Brave components')
+  await page.goto('brave://components', { waitUntil: 'domcontentloaded' })
+  const buttons = await page.$$('.button-check-update')
+  for (const button of buttons) {
+    const buttonId = await page.evaluate(el => el.getAttribute('id'), button)
+    if (buttonId) {
+      console.log('Updating component:', buttonId)
+      await button.click()
+      await setTimeout(50) // Wait for 50ms between clicks
+    }
+  }
 
-    await browserProxy.enableFilterList('AC023D22-AE88-4060-A978-4FEEEC4221693', easyListCookieEnabled)
-  }, !disableCookieList)
+  // TODO: check component update status
+  await setTimeout(2000)
+  console.log('Components updated')
 
   await page.close()
 
   await browser.close()
 
-  envHandle.close()
+  // Clean up stale Singleton Lock
+  await fs.rm(`${tmpProfile}/SingletonLock`, { force: true })
+  // Clean up crx cache
+  await fs.rm(`${tmpProfile}/component_crx_cache`, { force: true, recursive: true })
 
-  console.log('Done. Profile has been cached for future use.')
+  const adblockComponents = parseListCatalogComponentIds({ profileDir: tmpProfile })
+
+  readdirSync(tmpProfile).forEach(fileName => {
+    // check if valid component id and not in keeplist
+    if (isValidChromeComponentId({ id: fileName }) && !isKeeplistedComponentId({ id: fileName, additionalComponentList: adblockComponents })) {
+      console.log('patching component: ', fileName)
+      const extensionDir = path.join(tmpProfile, fileName)
+      const versionDir = getExtensionVersion(extensionDir)
+      const srcManifest = path.join(extensionDir, versionDir, 'manifest.json')
+      const destPath = path.join(templateProfile, fileName, '999.999')
+      replaceVersion({ fileName: srcManifest })
+      mkdirSync(destPath, { recursive: true })
+      if (fileName === 'gkboaolpopklhgplhaaiboijnklogmbc') {
+        // copy List Catalog files after modifying version
+        cpSync(path.join(extensionDir, versionDir), destPath, { recursive: true })
+      } else {
+        // only copy the manifest for all other components
+        cpSync(srcManifest, path.join(destPath, 'manifest.json'))
+      }
+    } else {
+      // copy all other files in profile directory, as well as keeplisted components
+      cpSync(`${tmpProfile}/${fileName}`, `${templateProfile}/${fileName}`, { recursive: true })
+    }
+  })
+
+  const adblockUuids = getAdblockUuids({ profileDir: tmpProfile })
+  writeFileSync(path.join(import.meta.dirname, '..', 'adblock_lists.json'), JSON.stringify(adblockUuids, null, 2))
+
+  await fs.rm(tmpProfile, { recursive: true })
+  console.log('Done. Profile has been prepared for future use.')
 }

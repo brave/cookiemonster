@@ -7,9 +7,13 @@ import { checkPage, prepareProfile } from './lib.mjs'
 
 const args = {
   seconds: 0,
-  interactive: false,
   executablePath: process.argv[2] || '/usr/bin/brave',
-  disableCookieList: true
+  adblockLists: {
+    '9F38E77A-64AA-4C5F-AF37-727CAE1266FF': false,
+    'E99CBD02-FFD1-4651-9BDD-6A9ED7B87819': false,
+    'AC023D22-AE88-4060-A978-4FEEEC4221693': false,
+    '2F3DCE16-A19A-493C-A88F-2E110FBD37D6': false
+  }
 }
 
 AWSXRay.setContextMissingStrategy((msg) => {}) // suppress errors if X-Ray is not configured
