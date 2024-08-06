@@ -10,8 +10,8 @@ import rehypeFormat from 'rehype-format'
 import rehypeParse from 'rehype-parse'
 import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
+import * as Sentry from "@sentry/node";
 
-import AWSXRay from 'aws-xray-sdk-core'
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
@@ -44,15 +44,10 @@ export const checkPage = async (args) => {
 
   const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile })
 
-  const segment = AWSXRay.getSegment()
-  let browserLaunchSegment
-  if (segment) {
-    browserLaunchSegment = segment.addNewSubsegment('launch_browser')
-  }
-  const browser = await puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
-  if (segment) {
-    browserLaunchSegment.close()
-  }
+  
+  const browser = await Sentry.startSpan({ name: "Launch Browser" }, () => {
+    return puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
+  });
 
   const page = await browser.newPage()
 

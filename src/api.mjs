@@ -5,10 +5,10 @@ import { existsSync } from 'fs'
 import path from 'path'
 import process from 'process'
 
-import xrayKoa from 'aws-xray-sdk-koa2'
-
+import "./instrument.mjs";
 import Koa from 'koa'
 import { bodyParser } from '@koa/bodyparser'
+import * as Sentry from "@sentry/node";
 
 import { checkPage } from './lib.mjs'
 
@@ -25,9 +25,12 @@ console.log(`Browser binary: ${browserBinaryPath}`)
 console.log(`Port: ${port}`)
 
 const app = new Koa()
-app.use(xrayKoa.openSegment('default'))
 app.use(bodyParser())
 
+Sentry.setupKoaErrorHandler(app);
+
+
+// TODO: replace with routes
 app.use(async ctx => {
   if (ctx.request.path === '/') {
     ctx.body = await fs.readFile(path.join(import.meta.dirname, 'page.html'))
@@ -42,7 +45,7 @@ app.use(async ctx => {
       seconds: seconds || 4,
       executablePath: browserBinaryPath,
       adblockLists,
-      debugLevel: 'verbose',
+      //debugLevel: 'verbose',
       screenshot
     })
     ctx.body = JSON.stringify(report)
