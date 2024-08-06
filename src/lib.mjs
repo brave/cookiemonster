@@ -10,7 +10,7 @@ import rehypeFormat from 'rehype-format'
 import rehypeParse from 'rehype-parse'
 import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
-import * as Sentry from "@sentry/node";
+import * as Sentry from '@sentry/node'
 
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
@@ -44,10 +44,9 @@ export const checkPage = async (args) => {
 
   const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile })
 
-  
-  const browser = await Sentry.startSpan({ name: "Launch Browser" }, () => {
+  const browser = await Sentry.startSpan({ name: 'Launch Browser' }, () => {
     return puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
-  });
+  })
 
   const page = await browser.newPage()
 

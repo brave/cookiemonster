@@ -5,10 +5,10 @@ import { existsSync } from 'fs'
 import path from 'path'
 import process from 'process'
 
-import "./instrument.mjs";
+import './instrument.mjs'
 import Koa from 'koa'
 import { bodyParser } from '@koa/bodyparser'
-import * as Sentry from "@sentry/node";
+import * as Sentry from '@sentry/node'
 
 import { checkPage } from './lib.mjs'
 
@@ -27,8 +27,7 @@ console.log(`Port: ${port}`)
 const app = new Koa()
 app.use(bodyParser())
 
-Sentry.setupKoaErrorHandler(app);
-
+Sentry.setupKoaErrorHandler(app)
 
 // TODO: replace with routes
 app.use(async ctx => {
@@ -45,7 +44,7 @@ app.use(async ctx => {
       seconds: seconds || 4,
       executablePath: browserBinaryPath,
       adblockLists,
-      //debugLevel: 'verbose',
+      // debugLevel: 'verbose',
       screenshot
     })
     ctx.body = JSON.stringify(report)
