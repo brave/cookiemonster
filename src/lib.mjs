@@ -21,6 +21,7 @@ import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChrome
 
 export const checkPage = async (args) => {
   const url = args.url
+  const includeScreenshot = args.screenshot ?? true
 
   const report = {
     url,
@@ -72,7 +73,7 @@ export const checkPage = async (args) => {
         const boundingBox = await inPageResult.boundingBox()
         if (boundingBox.height === 0 || boundingBox.width === 0) {
           // it won't work for a screenshot. Find another element to capture, somehow
-        } else {
+        } else if (includeScreenshot) {
           const screenshotB64 = await inPageResult.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
           report.screenshot = screenshotB64
         }

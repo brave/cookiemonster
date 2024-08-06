@@ -36,13 +36,14 @@ app.use(async ctx => {
     ctx.body = await fs.readFile(path.join(import.meta.dirname, '..', 'adblock_lists.json'))
     ctx.response.type = 'json'
   } else if (ctx.request.path === '/check') {
-    const { url, seconds, adblockLists } = ctx.request.body
+    const { url, seconds, adblockLists, screenshot } = ctx.request.body
     const report = await checkPage({
       url,
       seconds: seconds || 4,
       executablePath: browserBinaryPath,
       adblockLists,
-      debugLevel: 'verbose'
+      debugLevel: 'verbose',
+      screenshot
     })
     ctx.body = JSON.stringify(report)
   }
