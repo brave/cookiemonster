@@ -37,7 +37,7 @@ export function inPageRoutine () {
 
   const contentChecks = [
     (e) => {
-      return e.innerText.match(/cookies/) !== null
+      return e.innerText.match(/(C|c)ookies/) !== null
     },
     (e) => {
       return e.innerText.match(/consent/) !== null
