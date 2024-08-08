@@ -12,7 +12,7 @@ export function inPageRoutine () {
     if (e.querySelector('section') !== null) {
       return true
     }
-    if (e.innerText.length > 10000) {
+    if (e.innerText.toLowerCase().length > 10000) {
       return true
     }
   }
@@ -37,28 +37,28 @@ export function inPageRoutine () {
 
   const contentChecks = [
     (e) => {
-      return e.innerText.match(/cookies/) !== null
+      return e.innerText.toLowerCase().match(/cookies/) !== null
     },
     (e) => {
-      return e.innerText.match(/consent/) !== null
+      return e.innerText.toLowerCase().match(/consent/) !== null
     },
     (e) => {
-      return e.innerText.match(/privacy/) !== null
+      return e.innerText.toLowerCase().match(/privacy/) !== null
     },
     (e) => {
-      return e.innerText.match(/experience/) !== null
+      return e.innerText.toLowerCase().match(/experience/) !== null
     },
     (e) => {
-      return e.innerText.match(/analytics/) !== null
+      return e.innerText.toLowerCase().match(/analytics/) !== null
     },
     (e) => {
-      return e.innerText.match(/accept/) !== null
+      return e.innerText.toLowerCase().match(/accept/) !== null
     },
     (e) => {
-      return e.innerText.match(/only necessary/) !== null
+      return e.innerText.toLowerCase().match(/only necessary/) !== null
     },
     (e) => {
-      return e.innerText.match(/reject/) !== null
+      return e.innerText.toLowerCase().match(/reject/) !== null
     }
   ]
   const contentCheckedElements = fixedPositionElements.filter(node => {
