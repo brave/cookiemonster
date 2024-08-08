@@ -51,6 +51,7 @@ const result = await checkPage({
   adblockLists: {                    // enable/disable filter lists by component id
     'cdbbhgbmjhfnhnmgeddbliobbofkgdhe': false,
   },
+  screenshot: true,                  // return images of detected notices
 });
 ```
 
