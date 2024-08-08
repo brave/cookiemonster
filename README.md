@@ -48,7 +48,10 @@ const result = await checkPage({
   seconds: 4,                        // delay before checking for a notice
   interactive: false,                // show the browser while running?
   executablePath: '/path/to/binary', // what browser to run
-  disableCookieList: true,           // ignore rules from EasyList Cookie?
+  adblockLists: {                    // enable/disable filter lists by component id
+    'cdbbhgbmjhfnhnmgeddbliobbofkgdhe': false,
+  },
+  screenshot: true,                  // return images of detected notices
 });
 ```
 
