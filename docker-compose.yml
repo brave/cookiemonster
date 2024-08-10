@@ -3,15 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: brave
-    image: ${DOCKER_REPOSITORY:-brave/cookiemonster}:brave
+    image: ${DOCKER_REPOSITORY:-brave/cookiemonster}:latest
+    volumes:
+      - .:/app
+    env_file: .env
     ports:
       - "3000:3000"
-  chromium:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: chromium
-    image: ${DOCKER_REPOSITORY:-brave/cookiemonster}:chromium
-    ports:
-      - "3001:3000"
