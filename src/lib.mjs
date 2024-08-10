@@ -17,7 +17,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
-import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, replaceVersion, getAdblockUuids, toggleAdblocklists } from './util.mjs'
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists } from './util.mjs'
 
 export const checkPage = async (args) => {
   const url = args.url
@@ -171,8 +171,8 @@ export const prepareProfile = async (args) => {
     }
   })
 
-  const adblockUuids = getAdblockUuids({ profileDir: tmpProfile })
-  writeFileSync(path.join(import.meta.dirname, '..', 'adblock_lists.json'), JSON.stringify(adblockUuids, null, 2))
+  const optionalDefaultComponents = getOptionalDefaultComponentIds({ profileDir: tmpProfile })
+  writeFileSync(path.join(import.meta.dirname, '..', 'adblock_lists.json'), JSON.stringify(optionalDefaultComponents, null, 2))
 
   await fs.rm(tmpProfile, { recursive: true })
   console.log('Done. Profile has been prepared for future use.')

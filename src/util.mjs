@@ -34,33 +34,33 @@ export const replaceVersion = ({ fileName }) => {
   writeFileSync(fileName, modifiedManifest)
 }
 
-export const parseListCatalogComponentIds = ({ profileDir }) => {
+const getListCatalog = ({ profileDir }) => {
   const extensionDir = path.join(profileDir, 'gkboaolpopklhgplhaaiboijnklogmbc')
   const versionDir = getExtensionVersion(extensionDir)
   // gkboaolpopklhgplhaaiboijnklogmbc/1.0.60/list_catalog.json
   const data = readFileSync(path.join(extensionDir, versionDir, 'list_catalog.json'), 'utf8')
-  const jsonData = JSON.parse(data)
+  return JSON.parse(data)
+}
+
+export const parseListCatalogComponentIds = ({ profileDir }) => {
+  const catalog = getListCatalog({ profileDir })
 
   // Extract the component_id values
-  const componentIds = jsonData.map(item => item.list_text_component.component_id)
+  const componentIds = catalog.map(item => item.list_text_component.component_id)
 
   return componentIds
 }
 
-export const getAdblockUuids = ({ profileDir }) => {
-  const extensionDir = path.join(profileDir, 'gkboaolpopklhgplhaaiboijnklogmbc')
-  const versionDir = getExtensionVersion(extensionDir)
-  // gkboaolpopklhgplhaaiboijnklogmbc/1.0.60/list_catalog.json
-  const data = readFileSync(path.join(extensionDir, versionDir, 'list_catalog.json'), 'utf8')
-  const jsonData = JSON.parse(data)
+export const getOptionalDefaultComponentIds = ({ profileDir }) => {
+  const catalog = getListCatalog({ profileDir })
 
   // Extract the component_id values
-  const components = jsonData.reduce((acc, item) => {
-    if (item.uuid !== 'default' && (item.default_enabled === true)) {
-      acc[item.uuid] = item.title
-    }
-    return acc
-  }, {})
+  const components = catalog
+    .filter(item => item.list_text_component.component_id !== 'iodkpdagapdfkphljnddpjlldadblomo' && (item.default_enabled === true))
+    .reduce((acc, item) => {
+      acc[item.list_text_component.component_id] = item.title
+      return acc
+    }, {})
 
   return components
 }
@@ -80,8 +80,8 @@ export const toggleAdblocklists = (listCatalogPath, adblockLists) => {
   const listCatalog = JSON.parse(readFileSync(listCatalogPath), 'utf8')
 
   listCatalog.forEach(item => {
-    if (item.uuid in adblockLists) {
-      item.default_enabled = Boolean(adblockLists[item.uuid])
+    if (item.list_text_component.component_id in adblockLists) {
+      item.default_enabled = Boolean(adblockLists[item.list_text_component.component_id])
     }
   })
 

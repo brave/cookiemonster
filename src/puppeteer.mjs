@@ -16,7 +16,7 @@ export const puppeteerConfigForArgs = async (args) => {
     ignoreDefaultArgs: [
       '--disable-sync'
     ],
-    headless: true
+    headless: !(args.interactive ?? false)
   }
 
   if (args.debugLevel === 'verbose') {
