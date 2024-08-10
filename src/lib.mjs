@@ -44,6 +44,7 @@ export const checkPage = async (args) => {
 
   const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile })
 
+  console.log('Launching browser')
   const browser = await Sentry.startSpan({ name: 'Launch Browser' }, () => {
     return puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
   })
@@ -51,7 +52,10 @@ export const checkPage = async (args) => {
   const page = await browser.newPage()
 
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded' })
+    await Sentry.startSpan({ name: 'domcontentloaded' }, () => {
+      return page.goto(url, { waitUntil: 'domcontentloaded' })
+    })
+    console.log('Page loaded')
 
     const waitTimeMs = args.seconds * 1000
     await setTimeout(waitTimeMs)
@@ -88,6 +92,7 @@ export const checkPage = async (args) => {
     await page.close()
 
     await browser.close()
+    console.log('Browser closed')
 
     await fs.rm(workingProfile, { recursive: true })
   }
