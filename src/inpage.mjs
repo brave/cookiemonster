@@ -46,9 +46,6 @@ export function inPageRoutine () {
       return e.innerText.toLowerCase().match(/privacy/) !== null
     },
     (e) => {
-      return e.innerText.toLowerCase().match(/experience/) !== null
-    },
-    (e) => {
       return e.innerText.toLowerCase().match(/analytics/) !== null
     },
     (e) => {
