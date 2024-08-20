@@ -48,6 +48,7 @@ app.use(async ctx => {
       screenshot
     })
     ctx.body = JSON.stringify(report)
+    ctx.response.type = 'json'
   }
 })
 
