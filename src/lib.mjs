@@ -133,8 +133,15 @@ export const prepareProfile = async (args) => {
     }
   }
 
-  // TODO: check component update status
-  await setTimeout(2000)
+  await setTimeout(500)
+  console.log('Waiting for components to update...')
+  await page.waitForFunction(() => {
+    const elements = document.querySelectorAll('span[jscontent="status"]')
+    return Array.from(elements)
+      .map(el => el.innerText.trim())
+      .filter(text => text !== '')
+      .every(spanText => ['Component already up to date', 'Component updated'].includes(spanText))
+  }, { timeout: 60000 })
   console.log('Components updated')
 
   await page.close()
