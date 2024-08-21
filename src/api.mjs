@@ -29,6 +29,18 @@ app.use(bodyParser())
 
 Sentry.setupKoaErrorHandler(app)
 
+const proxyList = process.env.PROXY_LIST ? JSON.parse(process.env.PROXY_LIST) : {}
+const validProxies = Object.keys(proxyList).reduce((acc, region) => {
+  const countries = proxyList[region]
+  Object.keys(countries).forEach(country => {
+    const cities = countries[country]
+    Object.keys(cities).forEach(city => {
+      acc.push(cities[city])
+    })
+  })
+  return acc
+}, ['direct'])
+
 // TODO: replace with routes
 app.use(async ctx => {
   if (ctx.request.path === '/') {
@@ -37,14 +49,24 @@ app.use(async ctx => {
   } else if (ctx.request.path === '/adblock_lists.json') {
     ctx.body = await fs.readFile(path.join(import.meta.dirname, '..', 'adblock_lists.json'))
     ctx.response.type = 'json'
+  } else if (ctx.request.path === '/proxy_list.json') {
+    ctx.body = proxyList
+    ctx.response.type = 'json'
   } else if (ctx.request.path === '/check') {
-    const { url, seconds, adblockLists, screenshot } = ctx.request.body
+    const { url, seconds, adblockLists, screenshot, location = 'direct' } = ctx.request.body
+    // Ensure location is in the configured proxy list
+    if (!validProxies.includes(location)) {
+      ctx.status = 400
+      ctx.body = { error: 'Bad Request: invalid location' }
+      return
+    }
     const report = await checkPage({
       url,
       seconds: seconds || 4,
       executablePath: browserBinaryPath,
       adblockLists,
-      // debugLevel: 'verbose',
+      debugLevel: 'verbose',
+      location,
       screenshot
     })
     ctx.body = JSON.stringify(report)

@@ -75,6 +75,21 @@ input[type="url"] {
   font-family: monospace;
   width: 40em;
 }
+select {
+  font-family: monospace; /* Sets the font to monospace */
+  width: 30em;            /* Sets the width of the select element */
+  padding: 0.5em;         /* Adds some padding for better appearance */
+  border: 1px solid #ccc; /* Adds a border similar to input fields */
+  border-radius: 4px;     /* Rounds the corners of the select box */
+  background-color: #fff; /* Sets the background color */
+  color: #333;            /* Sets the text color */
+  appearance: none;       /* Removes the default dropdown arrow in some browsers */
+}
+select option {
+  font-family: monospace; /* Ensures the option text uses the same font */
+  color: #333;            /* Sets the text color for options */
+  background-color: #fff; /* Sets the background color for options */
+}
 img {
   box-shadow: 0 0 0.5em #ccc;
 }
@@ -129,9 +144,18 @@ details pre {
         <input type="url" id="url-input" name="url-input" placeholder="https://example.com" autofocus/>
         <button type="submit" id="execute">Check for cookie notices ↪</button>
       </div>
+      <div class="row">
       <fieldset id="adblock-lists">
         <legend>Enabled lists</legend>
       </fieldset>
+
+      <fieldset id="locations">
+        <legend>Choose a location:</legend>
+        <select id="locations-select" name="locations">
+          <option value="direct">direct</option>
+        </select>
+      </fieldset>
+      </div>
     </form>
     <div id="spinner">🍪</div>
     <div id="reportlist"></div>
@@ -159,8 +183,27 @@ details pre {
           fieldset.appendChild(document.createElement('br'));
         }
       });
-
+      document.addEventListener("DOMContentLoaded", async function() {
+        // Fetch the proxy list JSON data
+        const proxy_list = await fetch('/proxy_list.json').then(response => response.json());
+        const selectElement = document.getElementById('locations-select');
+        for (const continent in proxy_list) {
+          const continentGroup = document.createElement("optgroup");
+          continentGroup.label = continent;
+          for (const country in proxy_list[continent]) {
+            const countryPrefix = `${country} - `;
+            for (const city in proxy_list[continent][country]) {
+              const option = document.createElement("option");
+              option.value = proxy_list[continent][country][city];
+              option.textContent = `${countryPrefix}${city}`;
+              continentGroup.appendChild(option);
+            }
+          }
+          selectElement.appendChild(continentGroup);
+        }
+      });
       const urlInput = document.getElementById('url-input');
+      const locationSelector = document.getElementById('locations-select');
       const executeButton = document.getElementById('execute');
       const spinner = document.getElementById('spinner');
       const reportList = document.getElementById('reportlist');
@@ -233,6 +276,7 @@ details pre {
         e.preventDefault();
 
         urlInput.disabled = true;
+        locationSelector.disabled = true;
         executeButton.disabled = true;
         for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {
           checkbox.disabled = true;
@@ -256,6 +300,7 @@ details pre {
           body: JSON.stringify({
             url,
             adblockLists: adblockLists,
+            location: locationSelector.value,
           }),
         })
           .then(resp => resp.json())
@@ -269,6 +314,7 @@ details pre {
         }
         urlInput.value = '';
         urlInput.disabled = false;
+        locationSelector.disabled = false;
         for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {
           checkbox.disabled = false;
         }

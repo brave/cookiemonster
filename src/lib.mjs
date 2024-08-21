@@ -12,12 +12,13 @@ import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
 import * as Sentry from '@sentry/node'
 
+import proxyChain from 'proxy-chain'
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
-import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists } from './util.mjs'
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth } from './util.mjs'
 
 export const checkPage = async (args) => {
   const url = args.url
@@ -42,7 +43,12 @@ export const checkPage = async (args) => {
   const listCatalogPath = path.join(workingProfile, 'gkboaolpopklhgplhaaiboijnklogmbc', '999.999', 'list_catalog.json')
   toggleAdblocklists(listCatalogPath, args.adblockLists)
 
-  const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile })
+  let proxyUrl
+  if (args.location !== 'direct') {
+    proxyUrl = await proxyChain.anonymizeProxy(proxyUrlWithAuth(args.location))
+    console.log(`Started local proxy server: ${proxyUrl}`)
+  }
+  const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile, proxyServer: proxyUrl })
 
   console.log('Launching browser')
   const browser = await Sentry.startSpan({ name: 'Launch Browser' }, () => {
@@ -93,6 +99,10 @@ export const checkPage = async (args) => {
 
     await browser.close()
     console.log('Browser closed')
+    if (args.location !== 'direct') {
+      await proxyChain.closeAnonymizedProxy(proxyUrl, true)
+    }
+    console.log('Proxy closed')
 
     await fs.rm(workingProfile, { recursive: true })
   }
