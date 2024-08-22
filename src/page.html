@@ -186,6 +186,9 @@ details pre {
         // Fetch the proxy list JSON data
         const proxy_list = await fetch('/proxy_list.json').then(response => response.json());
         const selectElement = document.getElementById('locations-select');
+        if (Object.keys(proxy_list).length === 0) {
+          document.getElementById('locations').style.display = 'none';
+        }
         for (const continent in proxy_list) {
           const continentGroup = document.createElement("optgroup");
           continentGroup.label = continent;
