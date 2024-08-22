@@ -25,6 +25,10 @@ export const puppeteerConfigForArgs = async (args) => {
     puppeteerArgs.dumpio = true
   }
 
+  if (args.proxyServer) {
+    puppeteerArgs.args.push(`--proxy-server=${args.proxyServer}`)
+  }
+
   if (args.extraArgs) {
     puppeteerArgs.args.push(...args.extraArgs)
   }

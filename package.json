@@ -16,8 +16,9 @@
   "main": "src/lib.mjs",
   "dependencies": {
     "@koa/bodyparser": "^5.1.1",
-    "@sentry/node": "^8.23.0",
+    "@sentry/node": "^8.26.0",
     "koa": "^2.15.3",
+    "proxy-chain": "^2.5.3",
     "puppeteer-core": "^22.7.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",

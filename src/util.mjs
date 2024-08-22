@@ -87,3 +87,11 @@ export const toggleAdblocklists = (listCatalogPath, adblockLists) => {
 
   writeFileSync(listCatalogPath, JSON.stringify(listCatalog, null, 2))
 }
+
+export const proxyUrlWithAuth = (proxyHost) => {
+  const proxyAuth = process.env.PROXY_AUTH
+  if (!proxyAuth) {
+    throw new Error('PROXY_AUTH not configured')
+  }
+  return `http://${proxyAuth}@${proxyHost}:8080`
+}
