@@ -101,8 +101,8 @@ export const checkPage = async (args) => {
     console.log('Browser closed')
     if (args.location !== 'direct') {
       await proxyChain.closeAnonymizedProxy(proxyUrl, true)
+      console.log('Proxy closed')
     }
-    console.log('Proxy closed')
 
     await fs.rm(workingProfile, { recursive: true })
   }
