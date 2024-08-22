@@ -7,7 +7,6 @@ import { checkPage, prepareProfile } from './lib.mjs'
 const args = {
   seconds: 0,
   executablePath: process.argv[2] || '/usr/bin/brave',
-  location: 'direct',
   adblockLists: {
     eaokkjgnlhceblfhbhpeoebmfldocmnc: false,
     adcocjohghhfpidemphmcmlmhnfgikei: false,
