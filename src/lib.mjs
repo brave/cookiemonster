@@ -44,7 +44,7 @@ export const checkPage = async (args) => {
   toggleAdblocklists(listCatalogPath, args.adblockLists)
 
   let proxyUrl
-  if (args.location !== 'direct') {
+  if (args.location) {
     proxyUrl = await proxyChain.anonymizeProxy(proxyUrlWithAuth(args.location))
     console.log(`Started local proxy server: ${proxyUrl}`)
   }
@@ -99,7 +99,7 @@ export const checkPage = async (args) => {
 
     await browser.close()
     console.log('Browser closed')
-    if (args.location !== 'direct') {
+    if (args.location) {
       await proxyChain.closeAnonymizedProxy(proxyUrl, true)
       console.log('Proxy closed')
     }

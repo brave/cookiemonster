@@ -39,7 +39,7 @@ const validProxies = Object.keys(proxyList).reduce((acc, region) => {
     })
   })
   return acc
-}, ['direct'])
+}, [])
 
 // TODO: replace with routes
 app.use(async ctx => {
@@ -53,9 +53,9 @@ app.use(async ctx => {
     ctx.body = proxyList
     ctx.response.type = 'json'
   } else if (ctx.request.path === '/check') {
-    const { url, seconds, adblockLists, screenshot, location = 'direct' } = ctx.request.body
+    const { url, seconds, adblockLists, screenshot, location } = ctx.request.body
     // Ensure location is in the configured proxy list
-    if (!validProxies.includes(location)) {
+    if (location && !validProxies.includes(location)) {
       ctx.status = 400
       ctx.body = { error: 'Bad Request: invalid location' }
       return
