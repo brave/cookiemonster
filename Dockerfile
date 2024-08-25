@@ -1,6 +1,7 @@
 # Base application image
 FROM node:lts-slim
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 /lambda-adapter /opt/extensions/lambda-adapter
+
+ARG FULL_CACHEBUST=0
 
 ARG CHANNEL=nightly # release, beta, nightly
 ARG PACKAGE_NAME=brave-browser-${CHANNEL}
@@ -12,7 +13,7 @@ ENV DEBIAN_FRONTEND=$DEBIAN_FRONTEND
 ENV AWS_LWA_PORT=3000
 
 RUN apt-get -qq update && \
-    apt-get -qy install curl tini && \
+    apt-get -qy install curl && \
     curl -fsSLo /usr/share/keyrings/${PACKAGE_NAME}-archive-keyring.gpg https://brave-browser-apt-${CHANNEL}.s3.brave.com/${PACKAGE_NAME}-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/${PACKAGE_NAME}-archive-keyring.gpg] https://brave-browser-apt-${CHANNEL}.s3.brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-${CHANNEL}.list && \
     apt-get -qq update && \
@@ -27,9 +28,11 @@ COPY . /app
 
 RUN chown -R node:node /app
 USER node
+
+ARG SETUP_CACHEBUST=0
+
 RUN npm run setup -- ${BRAVE_BINARY}
 RUN chmod -R o+rX /app/profile
 
 EXPOSE 3000
-ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD npm run serve -- ${BRAVE_BINARY} 3000
