@@ -2,7 +2,7 @@
 
 // This is the main routine that runs within a page and returns information about detected elements.
 // This function should be 100% self-contained - puppeteer does not transfer dependencies to the page's JS context.
-export function inPageRoutine () {
+export function inPageRoutine (hostOverride) {
   /* TODO: never used
   function containsMainPageContent (e) {
     // main page content: Content that should not be hidden by a rule in the cookie list. This can be determined using heuristics like the overall size of the HTML tree, the presence of semantic elements like nav or section, the amount of text, etc.
@@ -80,11 +80,42 @@ export function inPageRoutine () {
     return true
   })
 
-  if (visibleElements.length === 1) {
-    return visibleElements[0]
-  } else if (visibleElements.length === 0) {
+  // filter out elements which contain a lot of predominantly first-party links
+  let thisHost = hostOverride !== undefined ? hostOverride : new URL(window.location.href).host
+  if (thisHost.startsWith('www.')) {
+    thisHost = thisHost.substring(4)
+  }
+  const candidateElements = visibleElements.filter(e => {
+    const linkPartiness = Array.from(e.querySelectorAll('a[href]')).map(a => {
+      try {
+        const url = new URL(a.href)
+        const linkHost = url.host.startsWith('www.') ? url.host.substring(4) : url.host
+        return linkHost === thisHost
+      } catch (e) {
+        return undefined
+      }
+    })
+    const linkPartinessCount = linkPartiness.reduce((acc, v) => {
+      if (v === true) {
+        acc.first += 1
+      } else {
+        acc.third += 1
+      }
+      return acc
+    }, { first: 0, third: 0 })
+
+    if (linkPartinessCount.first > 10 && linkPartinessCount.first > linkPartinessCount.third) {
+      return false
+    }
+
+    return true
+  })
+
+  if (candidateElements.length === 1) {
+    return candidateElements[0]
+  } else if (candidateElements.length === 0) {
     return undefined
   } else {
-    return visibleElements
+    return candidateElements
   }
 }

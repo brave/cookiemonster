@@ -66,7 +66,7 @@ export const checkPage = async (args) => {
     const waitTimeMs = args.seconds * 1000
     await setTimeout(waitTimeMs)
 
-    const inPageResult = await page.evaluateHandle(inPageRoutine)
+    const inPageResult = await page.evaluateHandle(inPageRoutine, args.hostOverride)
     try {
       if (await inPageResult.evaluate(r => r !== undefined)) {
         const l = await inPageResult.evaluate(r => r.length)
