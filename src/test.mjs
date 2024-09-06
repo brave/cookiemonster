@@ -17,7 +17,7 @@ const args = {
 
 async function testPage (testCasePath, expectedHash) {
   const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href
-  return checkPage({ url, ...args }).then(r => {
+  return checkPage({ url, hostOverride: testCasePath, ...args }).then(r => {
     if (r.error) {
       console.log('[' + testCasePath + '] ERROR: ' + r.error)
       return false
@@ -46,6 +46,7 @@ const testCases = [
   ['fortune.com', 'a1+3zJekpAmX/usMwCHTBbpo/osoiNAJpGCKuOBzoLE='],
   ['github.com', undefined],
   ['gostateparks.hawaii.gov', 'JBYwuwip4exVrQIqPUVGz+FWrjnVqwLj8vqq8TXAGs0='],
+  ['jamieoliver.com', undefined],
   ['nordarun.com', '3hfzlWrqxNkDKbXjcST9vWASCuPWUfA1e41DXZMZ82o='],
   ['opensource.fb.com', '+5qjgLXR5vQPllW7bnKVkb97tTv4xG8TdAHJXmhiH2E='],
   ['pleo.io', 'DRv+MeADAubtGiWXFF9agr8Wk9IkZmCZEoUVvK3CqAs='],
@@ -54,6 +55,7 @@ const testCases = [
   ['temporal.cloud', 'bMYtB8cqUekB8ICfqzhjKDjkvqLxMMrfVEJsH55J+Pc='],
   ['www.arnotts.com', '+/BFJe+enU6qj0ZxCjZRR54Nvc1UHk4dSJ5othAycE0='],
   ['www.g-star.com', 'tElFyJc98b8e1eIcMu7T4AyOR6b0mIaNvOAU6wwcPdU='],
+  ['www.intelligems.io', undefined],
   ['www.kellanova.com', 'aZxeT/PGvgW5wcPMCkeXGJlXw88lC/GfEEJY+0bUXBU='],
   ['www.meld.io', 'SrMn/AlL+1vb9Ob9MneGIdHzuDVdK0QzOfBpLbBatCQ='],
   ['www.rebelmouse.com', undefined],
