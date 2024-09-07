@@ -74,7 +74,7 @@ router.post('/check', async (ctx) => {
     seconds: seconds || 4,
     executablePath: browserBinaryPath,
     adblockLists,
-    //debugLevel: 'verbose',
+    debugLevel: 'verbose',
     location,
     screenshot,
     fullPageScreenshot
