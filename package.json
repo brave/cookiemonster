@@ -16,6 +16,7 @@
   "main": "src/lib.mjs",
   "dependencies": {
     "@koa/bodyparser": "^5.1.1",
+    "@koa/router": "^13.0.0",
     "@sentry/node": "^8.26.0",
     "koa": "^2.15.3",
     "proxy-chain": "^2.5.3",

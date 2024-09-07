@@ -9,6 +9,7 @@ import './instrument.mjs'
 import Koa from 'koa'
 import { bodyParser } from '@koa/bodyparser'
 import * as Sentry from '@sentry/node'
+import Router from '@koa/router'
 
 import { checkPage } from './lib.mjs'
 
@@ -41,37 +42,47 @@ const validProxies = Object.keys(proxyList).reduce((acc, region) => {
   return acc
 }, [])
 
-// TODO: replace with routes
-app.use(async ctx => {
-  if (ctx.request.path === '/') {
-    ctx.body = await fs.readFile(path.join(import.meta.dirname, 'page.html'))
-    ctx.response.type = 'html'
-  } else if (ctx.request.path === '/adblock_lists.json') {
-    ctx.body = await fs.readFile(path.join(import.meta.dirname, '..', 'adblock_lists.json'))
-    ctx.response.type = 'json'
-  } else if (ctx.request.path === '/proxy_list.json') {
-    ctx.body = proxyList
-    ctx.response.type = 'json'
-  } else if (ctx.request.path === '/check') {
-    const { url, seconds, adblockLists, screenshot, location } = ctx.request.body
-    // Ensure location is in the configured proxy list
-    if (location && !validProxies.includes(location)) {
-      ctx.status = 400
-      ctx.body = { error: 'Bad Request: invalid location' }
-      return
-    }
-    const report = await checkPage({
-      url,
-      seconds: seconds || 4,
-      executablePath: browserBinaryPath,
-      adblockLists,
-      debugLevel: 'verbose',
-      location,
-      screenshot
-    })
-    ctx.body = JSON.stringify(report)
-    ctx.response.type = 'json'
-  }
+// Create a new router
+const router = new Router()
+
+// Define routes
+router.get('/', async (ctx) => {
+  ctx.body = await fs.readFile(path.join(import.meta.dirname, 'page.html'))
+  ctx.response.type = 'html'
 })
+
+router.get('/adblock_lists.json', async (ctx) => {
+  ctx.body = await fs.readFile(path.join(import.meta.dirname, '..', 'adblock_lists.json'))
+  ctx.response.type = 'json'
+})
+
+router.get('/proxy_list.json', async (ctx) => {
+  ctx.body = proxyList
+  ctx.response.type = 'json'
+})
+
+router.post('/check', async (ctx) => {
+  const { url, seconds, adblockLists, screenshot, location } = ctx.request.body
+  // Ensure location is in the configured proxy list
+  if (location && !validProxies.includes(location)) {
+    ctx.status = 400
+    ctx.body = { error: 'Bad Request: invalid location' }
+    return
+  }
+  const report = await checkPage({
+    url,
+    seconds: seconds || 4,
+    executablePath: browserBinaryPath,
+    adblockLists,
+    debugLevel: 'verbose',
+    location,
+    screenshot
+  })
+  ctx.body = JSON.stringify(report)
+  ctx.response.type = 'json'
+})
+
+app.use(router.routes())
+app.use(router.allowedMethods())
 
 app.listen(port)
