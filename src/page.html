@@ -95,6 +95,54 @@ img {
 img:hover {
   box-shadow: 0 0 1em #888;
 }
+/* based on https://www.w3schools.com/css/css_tooltip.asp */
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 250px; /* Increased from 120px to 250px */
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  padding: 10px; /* Increased padding for better readability */
+  border-radius: 6px;
+
+  /* Position the tooltip text */
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position the tooltip above the text */
+  left: 50%;
+  margin-left: -125px; /* Use half of the width to center the tooltip */
+
+  /* Add transition for smooth appearance */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Arrow for the tooltip */
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
 #reportlist {
   flex: 1;
   display: flex;
@@ -156,6 +204,33 @@ details pre {
         <select id="locations-select" name="locations">
           <option value="">direct</option>
         </select>
+      </fieldset>
+
+      <fieldset id="screenshot">
+        <legend>Screenshot:</legend>
+        <div class="tooltip">
+          <input type="radio" id="screenshot-true" name="screenshot" value="true" checked>
+          <label for="screenshot-true">true (Default)</label>
+          <span class="tooltiptext">Take screenshot of detected element, or no screenshot if no element detected</span>
+        </div>
+        <br>
+        <div class="tooltip">
+          <input type="radio" id="screenshot-false" name="screenshot" value="false">
+          <label for="screenshot-false">false</label>
+          <span class="tooltiptext">Never take a screenshot</span>
+        </div>
+        <br>
+        <div class="tooltip">
+          <input type="radio" id="screenshot-always" name="screenshot" value="always">
+          <label for="screenshot-always">always</label>
+          <span class="tooltiptext">Take screenshot of detected element, or full page if no element detected</span>
+        </div>
+        <br>
+        <div class="tooltip">
+          <input type="radio" id="screenshot-fullPage" name="screenshot" value="fullPage">
+          <label for="screenshot-fullPage">fullPage</label>
+          <span class="tooltiptext">Always take a full page screenshot</span>
+        </div>
       </fieldset>
       </div>
     </form>
@@ -251,34 +326,45 @@ details pre {
           const p = document.createElement('p');
           p.textContent = 'No cookie consent notices were identified.';
           card.appendChild(p);
-          return card;
+        } else {
+          const p = document.createElement('p');
+          p.textContent = 'A cookie consent notice was identified.';
+          card.appendChild(p);
+
+          if (report.markup !== undefined) {
+            const details = document.createElement('details');
+
+            const summary = document.createElement('summary');
+            summary.textContent = 'Inspect';
+            details.appendChild(summary);
+
+            const markup = document.createElement('pre');
+            markup.textContent = report.markup;
+            details.appendChild(markup);
+
+            card.appendChild(details);
+          }
         }
-
-        const p = document.createElement('p');
-        p.textContent = 'A cookie consent notice was identified.';
-        card.appendChild(p);
-
-        if (report.markup !== undefined) {
-          const details = document.createElement('details');
-
-          const summary = document.createElement('summary');
-          summary.textContent = 'Inspect';
-          details.appendChild(summary);
-
-          const markup = document.createElement('pre');
-          markup.textContent = report.markup;
-          details.appendChild(markup);
-
-          card.appendChild(details);
-        }
-
         if (report.screenshot !== undefined) {
-          const h3 = document.createElement('h3');
-          h3.textContent = 'Screenshot';
-          card.appendChild(h3);
           const img = document.createElement('img');
           img.src = 'data:image/webp;base64,' + report.screenshot;
-          card.appendChild(img);
+          img.onload = function() {
+              // if the screenshot is large, display it in a details element
+              // TODO: adjust size based on user screen size?
+              if (this.width > 800 || this.height > 600) {
+                const details = document.createElement('details');
+                const summary = document.createElement('summary');
+                summary.textContent = 'Screenshot';
+                details.appendChild(summary);
+                details.appendChild(img);
+                card.appendChild(details);
+              } else {
+                const h3 = document.createElement('h3');
+                h3.textContent = 'Screenshot';
+                card.appendChild(h3);
+                card.appendChild(img);
+              }
+          };
         }
 
         return card;
@@ -313,6 +399,7 @@ details pre {
             url,
             adblockLists: adblockLists,
             location: locationSelector.value,
+            screenshot: document.querySelector('input[name="screenshot"]:checked').value
           }),
         })
           .then(resp => resp.json())
