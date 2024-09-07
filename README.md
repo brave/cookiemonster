@@ -59,7 +59,7 @@ const result = await checkPage({
 
 The `screenshot` parameter can be set to `true`, `false`, `always`, `fullPage`, the behavior is summarized in the following table:
 
-| parameter | element detected | no element detected |
+| value     | element detected | no element detected |
 |-----------|------------------|---------------------|
 | true      | 🎯               | ❌                  |
 | false     | ❌               | ❌                  |
