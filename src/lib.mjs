@@ -18,7 +18,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
-import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth } from './util.mjs'
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered } from './util.mjs'
 
 export const checkPage = async (args) => {
   const url = args.url
@@ -128,8 +128,9 @@ export const prepareProfile = async (args) => {
   const browser = await puppeteer.launch(puppeteerArgs)
 
   const page = await browser.newPage()
-  // Give the browser some time to download adblock components
-  await setTimeout(3000)
+  // Give the browser some time to register/download adblock components
+  console.log('Wait until all components are registered')
+  await checkAllComponentsRegistered(page)
 
   console.log('Updating Brave components')
   await page.goto('brave://components', { waitUntil: 'domcontentloaded' })
@@ -139,12 +140,12 @@ export const prepareProfile = async (args) => {
     if (buttonId) {
       console.log('Updating component:', buttonId)
       await button.click()
-      await setTimeout(50) // Wait for 50ms between clicks
+      await setTimeout(100) // Wait for 100ms between clicks
     }
   }
 
-  await setTimeout(500)
   console.log('Waiting for components to update...')
+  await setTimeout(500)
   await page.waitForFunction(() => {
     const elements = document.querySelectorAll('span[jscontent="status"]')
     return Array.from(elements)

@@ -1,5 +1,6 @@
 import path from 'path'
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
+import { setTimeout } from 'timers/promises'
 
 const chromeComponentIdPattern = /^[a-p]{32}$/
 
@@ -94,4 +95,36 @@ export const proxyUrlWithAuth = (proxyHost) => {
     throw new Error('PROXY_AUTH not configured')
   }
   return `http://${proxyAuth}@${proxyHost}:8080`
+}
+
+export const checkAllComponentsRegistered = async (page) => {
+  const maxAttempts = 10
+  const defaultListsComponentId = 'iodkpdagapdfkphljnddpjlldadblomo'
+  let previousComponentCount = 0
+
+  await setTimeout(3000)
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    await page.goto('brave://components', { waitUntil: 'domcontentloaded' })
+    await page.waitForSelector('.button-check-update')
+
+    const currentComponents = await page.evaluate(() => {
+      const buttons = document.querySelectorAll('.button-check-update')
+      return Array.from(buttons)
+        .filter(button => button.id !== '')
+        .map(button => button.id)
+    })
+
+    console.log(`Attempt ${attempt + 1}: ${currentComponents.length} components registered`)
+    // If the number of components is the same as the previous check and the default lists component is registered, return the current components
+    if (currentComponents.length === previousComponentCount && currentComponents.includes(defaultListsComponentId)) {
+      console.log('All components registered:')
+      console.log(currentComponents.join(', '))
+      return new Set(currentComponents)
+    }
+
+    previousComponentCount = currentComponents.length
+    await setTimeout(3000) // Wait for 3 seconds between checks
+  }
+
+  throw new Error('Max attempts reached. Some components might not be registered.')
 }
