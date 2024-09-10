@@ -145,7 +145,10 @@ details pre {
       </div>
       <div class="row">
       <fieldset id="adblock-lists">
-        <legend>Enabled lists</legend>
+        <legend>
+          <input type="checkbox" id="toggle-all-lists" checked>
+          <label for="toggle-all-lists">Enabled lists</label>
+        </legend>
       </fieldset>
 
       <fieldset id="locations">
@@ -162,6 +165,13 @@ details pre {
       <a href="https://github.com/brave/cookiemonster">Source code</a>
     </footer>
     <script type="module">
+      function toggleAllLists(checked) {
+          const checkboxes = document.querySelectorAll('#adblock-lists input[type="checkbox"]:not(#toggle-all-lists)');
+          checkboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+          });
+      }
+      document.getElementById('toggle-all-lists').onchange = function() { toggleAllLists(this.checked); };
       document.addEventListener("DOMContentLoaded", async function() {
         // Fetch the adblock lists JSON data
         const adblock_lists = await fetch('/adblock_lists.json').then(response => response.json());
@@ -288,7 +298,7 @@ details pre {
         const url = document.getElementById('url-input').value;
 
         const fieldset = document.getElementById('adblock-lists');
-        const checkboxes = fieldset.querySelectorAll('input[type="checkbox"]');
+        const checkboxes = fieldset.querySelectorAll('input[type="checkbox"]:not(#toggle-all-lists)');
         const adblockLists = Array.from(checkboxes).reduce((acc, checkbox) => {
                 acc[checkbox.id] = checkbox.checked;
                 return acc;
