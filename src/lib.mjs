@@ -4,8 +4,10 @@ import { existsSync, readdirSync, cpSync, mkdirSync, writeFileSync } from 'fs'
 import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
+import nodeUrl from 'node:url'
 import { setTimeout } from 'node:timers/promises'
 
+import suffixList from '@gorhill/publicsuffixlist'
 import rehypeFormat from 'rehype-format'
 import rehypeParse from 'rehype-parse'
 import rehypeStringify from 'rehype-stringify'
@@ -19,6 +21,31 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
 import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered } from './util.mjs'
+
+// Generate a random string between [a000000000, zzzzzzzzzz] (base 36)
+const generateRandomToken = () => {
+  const min = Number.parseInt('a000000000', 36)
+  const max = Number.parseInt('zzzzzzzzzz', 36)
+  return Math.floor(Math.random() * (max - min) + min).toString(36)
+}
+
+const inPageAPI = {
+  getETLDP1: (() => {
+    let init
+    return (hostname) => {
+      if (init === undefined) {
+        init = new Promise(resolve => {
+          fs.readFile(path.join(import.meta.dirname, '..', 'public_suffix_list.dat'), 'utf8')
+            .then(data => {
+              suffixList.parse(data, nodeUrl.domainToASCII)
+              resolve(true)
+            })
+        })
+      }
+      return init.then(() => suffixList.getDomain(hostname))
+    }
+  })()
+}
 
 export const checkPage = async (args) => {
   const url = args.url
@@ -66,7 +93,10 @@ export const checkPage = async (args) => {
     const waitTimeMs = args.seconds * 1000
     await setTimeout(waitTimeMs)
 
-    const inPageResult = await page.evaluateHandle(inPageRoutine, args.hostOverride)
+    const randomToken = generateRandomToken();
+
+    await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
+    const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
     try {
       if (await inPageResult.evaluate(r => r !== undefined)) {
         const l = await inPageResult.evaluate(r => r.length)
@@ -127,6 +157,10 @@ export const prepareProfile = async (args) => {
     // Create template profile directory
     await fs.mkdir(templateProfile)
   }
+
+  await fetch('https://publicsuffix.org/list/public_suffix_list.dat')
+    .then(resp => resp.text())
+    .then(body => fs.writeFile(path.join(import.meta.dirname, '..', 'public_suffix_list.dat'), body))
 
   console.log('Performing initial profile setup...')
   const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: tmpProfile })

@@ -2,7 +2,8 @@
 
 // This is the main routine that runs within a page and returns information about detected elements.
 // This function should be 100% self-contained - puppeteer does not transfer dependencies to the page's JS context.
-export function inPageRoutine (hostOverride) {
+// Function dependencies can be exposed and accessed via the API exposed by `randomToken`.
+export async function inPageRoutine (randomToken, hostOverride) {
   /* TODO: never used
   function containsMainPageContent (e) {
     // main page content: Content that should not be hidden by a rule in the cookie list. This can be determined using heuristics like the overall size of the HTML tree, the presence of semantic elements like nav or section, the amount of text, etc.
@@ -17,6 +18,11 @@ export function inPageRoutine (hostOverride) {
     }
   }
   */
+
+  const hostAPI = ['getETLDP1'].reduce((acc, v) => {
+    acc[v] = window[randomToken].bind(null, v)
+    return acc
+  }, {})
 
   const fixedPositionElements = []
   const walker = document.createTreeWalker(
@@ -81,20 +87,15 @@ export function inPageRoutine (hostOverride) {
   })
 
   // filter out elements which contain a lot of predominantly first-party links
-  let thisHost = hostOverride !== undefined ? hostOverride : new URL(window.location.href).host
-  if (thisHost.startsWith('www.')) {
-    thisHost = thisHost.substring(4)
-  }
-  const candidateElements = visibleElements.filter(e => {
-    const linkPartiness = Array.from(e.querySelectorAll('a[href]')).map(a => {
-      try {
-        const url = new URL(a.href)
-        const linkHost = url.host.startsWith('www.') ? url.host.substring(4) : url.host
-        return linkHost === thisHost
-      } catch (e) {
-        return undefined
-      }
-    })
+  const thisHost = hostOverride !== undefined ? hostOverride : new URL(window.location.href).host
+  const thisDomain = await hostAPI.getETLDP1(thisHost)
+  const asyncFilter = async (arr, predicate) => Promise.all(arr.map(predicate))
+    .then((results) => arr.filter((_v, index) => results[index]))
+  const candidateElements = await asyncFilter(visibleElements, async e => {
+    const linkPartiness = await Promise.all(Array.from(e.querySelectorAll('a[href]')).map(async a => {
+      const linkETLDP1 = await hostAPI.getETLDP1(new URL(a.href).host)
+      return thisDomain === linkETLDP1
+    }))
     const linkPartinessCount = linkPartiness.reduce((acc, v) => {
       if (v === true) {
         acc.first += 1
