@@ -62,7 +62,7 @@ router.get('/proxy_list.json', async (ctx) => {
 })
 
 router.post('/check', async (ctx) => {
-  const { url, seconds, adblockLists, screenshot, location } = ctx.request.body
+  const { url, seconds, adblockLists, screenshot, location, slowCheck } = ctx.request.body
   // Ensure location is in the configured proxy list
   if (location && !validProxies.includes(location)) {
     ctx.status = 400
@@ -74,9 +74,10 @@ router.post('/check', async (ctx) => {
     seconds: seconds || 4,
     executablePath: browserBinaryPath,
     adblockLists,
-    debugLevel: 'verbose',
+    //debugLevel: 'verbose',
     screenshot,
-    location
+    location,
+    slowCheck
   })
   ctx.body = JSON.stringify(report)
   ctx.response.type = 'json'

@@ -161,8 +161,9 @@ details pre {
 
       <fieldset id="other">
         <legend>Other options:</legend>
-        <input type="checkbox" id="full_page_screenshot" name="full_page_screenshot">
-        <label for="full_page_screenshot">Full page screenshot</label>
+        <label><input type="checkbox" id="full_page_screenshot" name="full_page_screenshot">Full page screenshot</label>
+        <br>
+        <label><input type="checkbox" id="slow_check" name="slow_check">Thorough check (slow)</label>
       </fieldset>
       </div>
     </form>
@@ -331,7 +332,8 @@ details pre {
             url,
             adblockLists: adblockLists,
             location: locationSelector.value,
-            screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true
+            screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true,
+            slowCheck: document.getElementById('slow_check').checked,
           }),
         })
           .then(resp => resp.json())

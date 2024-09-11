@@ -50,6 +50,7 @@ const inPageAPI = {
 export const checkPage = async (args) => {
   const url = args.url
   const includeScreenshot = args.screenshot ?? true
+  const slowCheck = args.slowCheck ?? false
 
   const report = {
     url,
@@ -91,6 +92,18 @@ export const checkPage = async (args) => {
     console.log('Page loaded')
 
     const waitTimeMs = args.seconds * 1000
+
+    if (slowCheck) {
+      console.log('Performing slow check, waiting for network to settle.')
+      try {
+        await page.waitForNavigation({ waitUntil: ['load','networkidle2'], timeout: 30000 });
+        console.log('Network settled')
+      } catch (error) {
+        console.warn('Navigation timed out or failed:', error.message);
+      }
+      await setTimeout(waitTimeMs) // wait longer for slow check
+    }
+
     await setTimeout(waitTimeMs)
 
     const randomToken = generateRandomToken();
