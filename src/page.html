@@ -95,6 +95,7 @@ img {
 img:hover {
   box-shadow: 0 0 1em #888;
 }
+
 #reportlist {
   flex: 1;
   display: flex;
@@ -156,6 +157,12 @@ details pre {
         <select id="locations-select" name="locations">
           <option value="">direct</option>
         </select>
+      </fieldset>
+
+      <fieldset id="other">
+        <legend>Other options:</legend>
+        <input type="checkbox" id="full_page_screenshot" name="full_page_screenshot">
+        <label for="full_page_screenshot">Full page screenshot</label>
       </fieldset>
       </div>
     </form>
@@ -251,34 +258,45 @@ details pre {
           const p = document.createElement('p');
           p.textContent = 'No cookie consent notices were identified.';
           card.appendChild(p);
-          return card;
+        } else {
+          const p = document.createElement('p');
+          p.textContent = 'A cookie consent notice was identified.';
+          card.appendChild(p);
+
+          if (report.markup !== undefined) {
+            const details = document.createElement('details');
+
+            const summary = document.createElement('summary');
+            summary.textContent = 'Inspect';
+            details.appendChild(summary);
+
+            const markup = document.createElement('pre');
+            markup.textContent = report.markup;
+            details.appendChild(markup);
+
+            card.appendChild(details);
+          }
         }
-
-        const p = document.createElement('p');
-        p.textContent = 'A cookie consent notice was identified.';
-        card.appendChild(p);
-
-        if (report.markup !== undefined) {
-          const details = document.createElement('details');
-
-          const summary = document.createElement('summary');
-          summary.textContent = 'Inspect';
-          details.appendChild(summary);
-
-          const markup = document.createElement('pre');
-          markup.textContent = report.markup;
-          details.appendChild(markup);
-
-          card.appendChild(details);
-        }
-
         if (report.screenshot !== undefined) {
-          const h3 = document.createElement('h3');
-          h3.textContent = 'Screenshot';
-          card.appendChild(h3);
           const img = document.createElement('img');
           img.src = 'data:image/webp;base64,' + report.screenshot;
-          card.appendChild(img);
+          img.onload = function() {
+              // if the screenshot is large, display it in a details element
+              // TODO: adjust size based on user screen size?
+              if (this.width > 800 || this.height > 600) {
+                const details = document.createElement('details');
+                const summary = document.createElement('summary');
+                summary.textContent = 'Screenshot';
+                details.appendChild(summary);
+                details.appendChild(img);
+                card.appendChild(details);
+              } else {
+                const h3 = document.createElement('h3');
+                h3.textContent = 'Screenshot';
+                card.appendChild(h3);
+                card.appendChild(img);
+              }
+          };
         }
 
         return card;
@@ -313,6 +331,7 @@ details pre {
             url,
             adblockLists: adblockLists,
             location: locationSelector.value,
+            screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true
           }),
         })
           .then(resp => resp.json())

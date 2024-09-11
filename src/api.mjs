@@ -75,8 +75,8 @@ router.post('/check', async (ctx) => {
     executablePath: browserBinaryPath,
     adblockLists,
     debugLevel: 'verbose',
-    location,
-    screenshot
+    screenshot,
+    location
   })
   ctx.body = JSON.stringify(report)
   ctx.response.type = 'json'

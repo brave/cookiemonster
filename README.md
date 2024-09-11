@@ -51,9 +51,25 @@ const result = await checkPage({
   adblockLists: {                    // enable/disable filter lists by component id
     'cdbbhgbmjhfnhnmgeddbliobbofkgdhe': false,
   },
-  screenshot: true,                  // return images of detected notices
+  screenshot: true,                  // return images of detected notices or full page (see Screenshots section)
 });
 ```
+
+## Screenshots
+
+The `screenshot` parameter can be set to `true`, `false`, `always`, `fullPage`, the behavior is summarized in the following table:
+
+| value     | element detected | no element detected |
+|-----------|------------------|---------------------|
+| true      | 🎯               | ❌                  |
+| false     | ❌               | ❌                  |
+| always    | 🎯               | 📄                  |
+| fullPage  | 📄               | 📄                  |
+
+**Legend**:  
+🎯 - Screenshot of detected element  
+📄 - Screenshot of full page  
+❌ - No screenshot  
 
 ## Testing
 

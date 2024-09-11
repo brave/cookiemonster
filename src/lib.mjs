@@ -77,7 +77,7 @@ export const checkPage = async (args) => {
         const boundingBox = await inPageResult.boundingBox()
         if (boundingBox.height === 0 || boundingBox.width === 0) {
           // it won't work for a screenshot. Find another element to capture, somehow
-        } else if (includeScreenshot) {
+        } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
           const screenshotB64 = await inPageResult.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
           report.screenshot = screenshotB64
         }
@@ -86,6 +86,12 @@ export const checkPage = async (args) => {
           .use(rehypeFormat)
           .use(rehypeStringify)
           .process(await inPageResult.evaluate(e => e.outerHTML))).trim()
+      }
+      // Add full page screenshot if explicitly requested or if no element was detected and screenshot is set to "always"
+      if (['always', 'fullPage'].includes(includeScreenshot) && !report.screenshot) {
+        // TODO: scroll to bottom to trigger lazy-loaded elements
+        const screenshotB64 = await page.screenshot({ fullPage: true, omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
+        report.screenshot = screenshotB64
       }
     } catch (err) {
       report.error = err.message
