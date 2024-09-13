@@ -93,7 +93,7 @@ export const checkPage = async (args) => {
     const waitTimeMs = args.seconds * 1000
     await setTimeout(waitTimeMs)
 
-    const randomToken = generateRandomToken();
+    const randomToken = generateRandomToken()
 
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
     const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
