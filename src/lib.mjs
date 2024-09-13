@@ -96,10 +96,10 @@ export const checkPage = async (args) => {
     if (slowCheck) {
       console.log('Performing slow check, waiting for network to settle.')
       try {
-        await page.waitForNavigation({ waitUntil: ['load','networkidle2'], timeout: 30000 });
+        await page.waitForNavigation({ waitUntil: ['load', 'networkidle2'], timeout: 30000 })
         console.log('Network settled')
       } catch (error) {
-        console.warn('Navigation timed out or failed:', error.message);
+        console.warn('Navigation timed out or failed:', error.message)
       }
       await setTimeout(waitTimeMs) // wait longer for slow check
     }
