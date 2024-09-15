@@ -313,7 +313,9 @@ details pre {
         }
         spinner.classList.add('active');
 
-        const url = document.getElementById('url-input').value;
+        const urlInputElement = document.getElementById('url-input');
+        // Get the value, or fallback to the placeholder if the value is empty
+        const url = urlInputElement.value || urlInputElement.placeholder;
 
         const fieldset = document.getElementById('adblock-lists');
         const checkboxes = fieldset.querySelectorAll('input[type="checkbox"]:not(#toggle-all-lists)');
