@@ -17,7 +17,7 @@ const args = {
 
 async function testPage (testCasePath, expectedHash) {
   const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href
-  return checkPage({ url, hostOverride: testCasePath, ...args }).then(r => {
+  return checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args }).then(r => {
     if (r.error) {
       console.log('[' + testCasePath + '] ERROR: ' + r.error)
       return false

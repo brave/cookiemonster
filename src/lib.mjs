@@ -47,10 +47,23 @@ const inPageAPI = {
   })()
 }
 
+const shouldBlockRequest = (request) => {
+  const url = request.url()
+
+  // Block non-http/https URLs
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    console.log(`Blocked URL: ${url}`)
+    return true
+  }
+
+  return false
+}
+
 export const checkPage = async (args) => {
   const url = args.url
   const includeScreenshot = args.screenshot ?? true
   const slowCheck = args.slowCheck ?? false
+  const blockNonHttpRequests = args.blockNonHttpRequests ?? true
 
   const report = {
     url,
@@ -86,6 +99,27 @@ export const checkPage = async (args) => {
   const page = await browser.newPage()
 
   try {
+
+    if (blockNonHttpRequests) {
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        throw new Error('Blocked non-HTTP(S) request')
+      }
+
+      let blockError;
+      await page.setRequestInterception(true)
+      page.on('request', (request) => {
+        if (shouldBlockRequest(request)) {
+          request.abort();
+          blockError = new Error('Blocked non-HTTP(S) request');
+        } else {
+          request.continue();
+        }
+      });
+      if (blockError) {
+        throw blockError;
+      }
+    }
+
     await Sentry.startSpan({ name: 'domcontentloaded' }, () => {
       return page.goto(url, { waitUntil: 'domcontentloaded' })
     })
