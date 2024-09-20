@@ -104,18 +104,18 @@ export const checkPage = async (args) => {
         throw new Error('Blocked non-HTTP(S) request')
       }
 
-      let blockError;
+      let blockError
       await page.setRequestInterception(true)
       page.on('request', (request) => {
         if (shouldBlockRequest(request)) {
-          request.abort();
-          blockError = new Error('Blocked non-HTTP(S) request');
+          request.abort()
+          blockError = new Error('Blocked non-HTTP(S) request')
         } else {
-          request.continue();
+          request.continue()
         }
-      });
+      })
       if (blockError) {
-        throw blockError;
+        throw blockError
       }
     }
 
