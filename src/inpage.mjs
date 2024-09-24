@@ -20,7 +20,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
   */
 
   const hostAPI = ['getETLDP1'].reduce((acc, v) => {
-    acc[v] = window[randomToken].bind(null, v)
+    acc[v] = (...args) => window[randomToken](v, ...args)
     return acc
   }, {})
 
