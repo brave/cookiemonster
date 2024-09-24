@@ -112,11 +112,27 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return true
   })
 
-  if (candidateElements.length === 1) {
-    return candidateElements[0]
-  } else if (candidateElements.length === 0) {
+  const uncontainedElements = []
+  if (candidateElements.length > 0) {
+    for (let i = candidateElements.length - 1; i >= 0; i--) {
+      let contained = false
+      for (let j = 0; j < candidateElements.length; j++) {
+        if (i !== j && candidateElements[j].contains(candidateElements[i])) {
+          contained = true
+          break
+        }
+      }
+      if (!contained) {
+        uncontainedElements.push(candidateElements[i])
+      }
+    }
+  }
+
+  if (uncontainedElements.length === 1) {
+    return uncontainedElements[0]
+  } else if (uncontainedElements.length === 0) {
     return undefined
   } else {
-    return candidateElements
+    return uncontainedElements
   }
 }
