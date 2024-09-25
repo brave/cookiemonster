@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+* {
+  background: white;
+}
+body {
+  font-size: 1.2em;
+  width: 16em;
+  padding: 1.2em;
+}
+h1 {
+  margin-top: 0;
+}
+label {
+  color: #888;
+}
+input[type="url"],button {
+  font-size: 1.5em;
+  height: 50px;
+  border: none;
+  border-radius: 0.2em;
+  padding: 0 0.75em;
+  flex: 1;
+}
+button {
+  background: #bdf;
+  transition: background 1s, box-shadow 0.2s;
+  cursor: pointer;
+  min-width: 8em;
+  flex: 0;
+}
+button:hover {
+  background: linear-gradient(to right, #dbf, #ffb);
+  box-shadow: 0 0 1em #fff;
+}
+a.de-emphasize {
+  color: #999;
+  text-decoration: none;
+  line-height: 2em;
+}
+a.de-emphasize:hover {
+  color: #222;
+}
+section {
+  display: none;
+}
+section.active {
+  display: block;
+}
+    </style>
+  </head>
+  <body>
+    <h1>Cookiemonster</h1>
+    <section id="nothing">
+      Cookiemonster is active 😎
+    </section>
+    <section id="detected" class="active">
+      <p>A cookie notice was detected.</p>
+      <button id="report">Report it!</button>
+      </br>
+      <a class="de-emphasize" href="">false positive?</a>
+      </br>
+    </section>
+    <section id="thanks">
+      <p>
+      Thanks! We'll get this fixed soon!
+      </p>
+      <input type="checkbox" name="auto-report" id="auto-report"></input>
+      <label for="auto-report">Auto-report all detected notices</label>
+    </section>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Cookiemonster",
+  "version": "1.0.0",
+  "description": "I eat cookie notices",
+  "icons": {
+    "128": "images/icon-128.png"
+  },
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["inpage.mjs"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "js": [
+        "content-script.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "action":{
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "images/icon-128.png"
+    }
+  },
+  "run_at": "document_start",
+  "permissions": ["scripting", "activeTab"]
+}
