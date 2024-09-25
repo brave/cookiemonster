@@ -19,7 +19,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
   }
   */
 
-  const hostAPI = ['getETLDP1'].reduce((acc, v) => {
+  const hostAPI = ['getETLDP1', 'classifyInnerText'].reduce((acc, v) => {
     acc[v] = (...args) => window[randomToken](v, ...args)
     return acc
   }, {})
@@ -41,38 +41,6 @@ export async function inPageRoutine (randomToken, hostOverride) {
     }
   }
 
-  const contentChecks = [
-    (e) => {
-      return e.innerText.toLowerCase().match(/cookies/) !== null
-    },
-    (e) => {
-      return e.innerText.toLowerCase().match(/consent/) !== null
-    },
-    (e) => {
-      return e.innerText.toLowerCase().match(/privacy/) !== null
-    },
-    (e) => {
-      return e.innerText.toLowerCase().match(/analytics/) !== null
-    },
-    (e) => {
-      return e.innerText.toLowerCase().match(/accept/) !== null
-    },
-    (e) => {
-      return e.innerText.toLowerCase().match(/only necessary/) !== null
-    },
-    (e) => {
-      return e.innerText.toLowerCase().match(/reject/) !== null
-    }
-  ]
-  const contentCheckedElements = fixedPositionElements.filter(node => {
-    for (const contentCheck of contentChecks) {
-      if (contentCheck(node)) {
-        return true
-      }
-    }
-    return false
-  })
-
   const windowRect = {
     left: 0,
     right: window.innerWidth,
@@ -80,7 +48,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
     bottom: window.innerHeight
   }
 
-  const visibleElements = contentCheckedElements.filter(node => {
+  const visibleElements = fixedPositionElements.filter(node => {
     const nodeRect = node.getBoundingClientRect()
     if (nodeRect.left >= windowRect.right ||
         nodeRect.right <= windowRect.left ||
@@ -91,12 +59,13 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return true
   })
 
+  const asyncFilter = async (arr, predicate) => Promise.all(arr.map(predicate))
+    .then((results) => arr.filter((_v, index) => results[index]))
+
   // filter out elements which contain a lot of predominantly first-party links
   const thisHost = hostOverride !== undefined ? hostOverride : new URL(window.location.href).host
   const thisDomain = await hostAPI.getETLDP1(thisHost)
-  const asyncFilter = async (arr, predicate) => Promise.all(arr.map(predicate))
-    .then((results) => arr.filter((_v, index) => results[index]))
-  const candidateElements = await asyncFilter(visibleElements, async e => {
+  const linkCheckedElements = await asyncFilter(visibleElements, async e => {
     const linkPartiness = await Promise.all(Array.from(e.querySelectorAll('a[href]')).map(async a => {
       const linkETLDP1 = await hostAPI.getETLDP1(new URL(a.href).host)
       return thisDomain === linkETLDP1
@@ -118,26 +87,35 @@ export async function inPageRoutine (randomToken, hostOverride) {
   })
 
   const uncontainedElements = []
-  if (candidateElements.length > 0) {
-    for (let i = candidateElements.length - 1; i >= 0; i--) {
+  if (linkCheckedElements.length > 0) {
+    for (let i = linkCheckedElements.length - 1; i >= 0; i--) {
       let contained = false
-      for (let j = 0; j < candidateElements.length; j++) {
-        if (i !== j && candidateElements[j].contains(candidateElements[i])) {
+      for (let j = 0; j < linkCheckedElements.length; j++) {
+        if (i !== j && linkCheckedElements[j].contains(linkCheckedElements[i])) {
           contained = true
           break
         }
       }
       if (!contained) {
-        uncontainedElements.push(candidateElements[i])
+        uncontainedElements.push(linkCheckedElements[i])
       }
     }
   }
 
-  if (uncontainedElements.length === 1) {
-    return uncontainedElements[0]
-  } else if (uncontainedElements.length === 0) {
+  const contentCheckedElements = await asyncFilter(uncontainedElements, async node => {
+    const innerText = node.innerText
+    if (innerText.trim() === '') {
+      return false
+    }
+    const b = await hostAPI.classifyInnerText(node.innerText)
+    return b
+  })
+
+  if (contentCheckedElements.length === 1) {
+    return contentCheckedElements[0]
+  } else if (contentCheckedElements.length === 0) {
     return undefined
   } else {
-    return uncontainedElements
+    return contentCheckedElements
   }
 }
