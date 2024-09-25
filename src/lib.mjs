@@ -14,6 +14,7 @@ import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
 import * as Sentry from '@sentry/node'
 
+import ollama from 'ollama'
 import proxyChain from 'proxy-chain'
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
@@ -30,7 +31,34 @@ const generateRandomToken = () => {
   return Math.floor(Math.random() * (max - min) + min).toString(36)
 }
 
+// Only allow a single process at a time; queue here
+let ollamaProcess = Promise.resolve()
+
 const inPageAPI = {
+  classifyInnerText: (innerText) => {
+    const prompt = `An overlay element is considered to be a "cookie consent notice" if it notifies the user of the site's use of cookies or other storage technology, provides a link to a privacy policy or terms of service document, and/or offers the user choices for the usage of cookies on the site.
+
+The following text was captured from the innerText of an HTML overlay element:
+
+\`\`\`
+${innerText}
+\`\`\`
+
+Is the overlay element above considered to be a "cookie consent notice"? Answer in one word.
+
+
+`
+    return new Promise(resolve => {
+      ollamaProcess = ollamaProcess.then(async () => {
+        const response = await ollama.chat({
+          model: 'llama3',
+          messages: [{ role: 'user', content: prompt }],
+        })
+        const answer = response.message.content
+        resolve(answer.match(/yes/i))
+      })
+    })
+  },
   getETLDP1: (() => {
     let init
     return (hostname) => {
