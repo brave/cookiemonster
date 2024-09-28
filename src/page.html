@@ -134,6 +134,9 @@ img:hover {
 details pre {
   white-space: pre-wrap;
 }
+#devices-select {
+  width: 15em; /* Shortens the width of the devices-select dropdown */
+}
     </style>
   </head>
   <body>
@@ -164,6 +167,11 @@ details pre {
         <label><input type="checkbox" id="full_page_screenshot" name="full_page_screenshot">Full page screenshot</label>
         <br>
         <label><input type="checkbox" id="slow_check" name="slow_check">Thorough check (slow)</label>
+        <br>
+        <label>Device:</label>
+        <select id="devices-select" name="devices">
+          <option value="">default</option>
+        </select>
       </fieldset>
       </div>
     </form>
@@ -203,7 +211,7 @@ details pre {
       document.addEventListener("DOMContentLoaded", async function() {
         // Fetch the proxy list JSON data
         const proxy_list = await fetch('/proxy_list.json').then(response => response.json());
-        const selectElement = document.getElementById('locations-select');
+        const locationsSelectElement = document.getElementById('locations-select');
         if (Object.keys(proxy_list).length === 0) {
           document.getElementById('locations').style.display = 'none';
         }
@@ -219,8 +227,18 @@ details pre {
               continentGroup.appendChild(option);
             }
           }
-          selectElement.appendChild(continentGroup);
+          locationsSelectElement.appendChild(continentGroup);
         }
+
+        // Fetch the device list JSON data
+        const device_list = await fetch('/device_list.json').then(response => response.json());
+        const devicesSelectElement = document.getElementById('devices-select');
+        device_list.forEach(deviceName => {
+          const option = document.createElement("option");
+          option.value = deviceName;
+          option.textContent = deviceName;
+          devicesSelectElement.appendChild(option);
+        });
       });
       const urlInput = document.getElementById('url-input');
       const locationSelector = document.getElementById('locations-select');
@@ -334,6 +352,7 @@ details pre {
             location: locationSelector.value,
             screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true,
             slowCheck: document.getElementById('slow_check').checked,
+            device: document.getElementById('devices-select').value
           }),
         })
           .then(resp => resp.json())

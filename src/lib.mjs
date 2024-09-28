@@ -17,6 +17,7 @@ import * as Sentry from '@sentry/node'
 import proxyChain from 'proxy-chain'
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
+import { KnownDevices } from 'puppeteer-core'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
 import { inPageRoutine } from './inpage.mjs'
@@ -64,6 +65,7 @@ export const checkPage = async (args) => {
   const includeScreenshot = args.screenshot ?? true
   const slowCheck = args.slowCheck ?? false
   const blockNonHttpRequests = args.blockNonHttpRequests ?? true
+  const deviceName = args.device
 
   const report = {
     url,
@@ -117,6 +119,12 @@ export const checkPage = async (args) => {
       if (blockError) {
         throw blockError
       }
+    }
+
+    // Emulate the device if the device name is set
+    if (deviceName) {
+      const device = KnownDevices[deviceName]
+      await page.emulate(device)
     }
 
     await Sentry.startSpan({ name: 'domcontentloaded' }, () => {
