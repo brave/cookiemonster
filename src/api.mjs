@@ -12,6 +12,7 @@ import * as Sentry from '@sentry/node'
 import Router from '@koa/router'
 
 import { checkPage } from './lib.mjs'
+import { getFilteredKnownDevices } from './util.mjs'
 
 const browserBinaryPath = process.argv[2] || '/usr/bin/brave'
 const port = process.argv[3] || 3000
@@ -61,14 +62,30 @@ router.get('/proxy_list.json', async (ctx) => {
   ctx.response.type = 'json'
 })
 
+const filteredDevices = getFilteredKnownDevices()
+
+router.get('/device_list.json', async (ctx) => {
+  ctx.body = filteredDevices
+  ctx.response.type = 'json'
+})
+
 router.post('/check', async (ctx) => {
-  const { url, seconds, adblockLists, screenshot, location, slowCheck } = ctx.request.body
+  const { url, seconds, adblockLists, screenshot, location, slowCheck, device } = ctx.request.body
+
+  // Validate device name
+  if (device && !filteredDevices.includes(device)) {
+    ctx.status = 400
+    ctx.body = { error: 'Bad Request: unknown device' }
+    return
+  }
+
   // Ensure location is in the configured proxy list
   if (location && !validProxies.includes(location)) {
     ctx.status = 400
     ctx.body = { error: 'Bad Request: invalid location' }
     return
   }
+
   const report = await checkPage({
     url,
     seconds: seconds || 4,
@@ -77,7 +94,8 @@ router.post('/check', async (ctx) => {
     // debugLevel: 'verbose',
     screenshot,
     location,
-    slowCheck
+    slowCheck,
+    device
   })
   ctx.body = JSON.stringify(report)
   ctx.response.type = 'json'

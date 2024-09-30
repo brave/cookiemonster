@@ -1,6 +1,7 @@
 import path from 'path'
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { setTimeout } from 'timers/promises'
+import { KnownDevices } from 'puppeteer-core'
 
 const chromeComponentIdPattern = /^[a-p]{32}$/
 
@@ -127,4 +128,11 @@ export const checkAllComponentsRegistered = async (page) => {
   }
 
   throw new Error('Max attempts reached. Some components might not be registered.')
+}
+
+export function getFilteredKnownDevices () {
+  return Object.keys(KnownDevices).filter(key => {
+    const deviceName = KnownDevices[key].name
+    return deviceName && (deviceName.includes('iPhone 15 Pro Max') || deviceName.includes('Pixel 5') || deviceName.includes('Galaxy S9'))
+  })
 }
