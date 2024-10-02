@@ -189,55 +189,61 @@ details pre {
       }
       document.getElementById('toggle-all-lists').onchange = function() { toggleAllLists(this.checked); };
       document.addEventListener("DOMContentLoaded", async function() {
-        // Fetch the adblock lists JSON data
-        const adblock_lists = await fetch('/adblock_lists.json').then(response => response.json());
-        const fieldset = document.getElementById('adblock-lists');
-        for (const [uuid, name] of Object.entries(adblock_lists)) {
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.id = uuid;
-          checkbox.name = name;
-          checkbox.checked = true;
+        // Fetch additional capabilities from the server and populate the UI accordingly
+        const configEndpoints = {
+          adblock_lists: adblock_lists => {
+            const fieldset = document.getElementById('adblock-lists');
+            for (const [uuid, name] of Object.entries(adblock_lists)) {
+              const checkbox = document.createElement('input');
+              checkbox.type = 'checkbox';
+              checkbox.id = uuid;
+              checkbox.name = name;
+              checkbox.checked = true;
 
-          const label = document.createElement('label');
-          label.htmlFor = uuid;
-          label.textContent = name;
+              const label = document.createElement('label');
+              label.htmlFor = uuid;
+              label.textContent = name;
 
-          fieldset.appendChild(checkbox);
-          fieldset.appendChild(label);
-          fieldset.appendChild(document.createElement('br'));
-        }
-      });
-      document.addEventListener("DOMContentLoaded", async function() {
-        // Fetch the proxy list JSON data
-        const proxy_list = await fetch('/proxy_list.json').then(response => response.json());
-        const locationsSelectElement = document.getElementById('locations-select');
-        if (Object.keys(proxy_list).length === 0) {
-          document.getElementById('locations').style.display = 'none';
-        }
-        for (const continent in proxy_list) {
-          const continentGroup = document.createElement("optgroup");
-          continentGroup.label = continent;
-          for (const country in proxy_list[continent]) {
-            const countryPrefix = `${country} - `;
-            for (const city in proxy_list[continent][country]) {
-              const option = document.createElement("option");
-              option.value = proxy_list[continent][country][city];
-              option.textContent = `${countryPrefix}${city}`;
-              continentGroup.appendChild(option);
+              fieldset.appendChild(checkbox);
+              fieldset.appendChild(label);
+              fieldset.appendChild(document.createElement('br'));
             }
-          }
-          locationsSelectElement.appendChild(continentGroup);
-        }
-
-        // Fetch the device list JSON data
-        const device_list = await fetch('/device_list.json').then(response => response.json());
-        const devicesSelectElement = document.getElementById('devices-select');
-        device_list.forEach(deviceName => {
-          const option = document.createElement("option");
-          option.value = deviceName;
-          option.textContent = deviceName;
-          devicesSelectElement.appendChild(option);
+          },
+          proxy_list: proxy_list => {
+            const locationsSelectElement = document.getElementById('locations-select');
+            if (Object.keys(proxy_list).length === 0) {
+              document.getElementById('locations').style.display = 'none';
+            }
+            for (const continent in proxy_list) {
+              const continentGroup = document.createElement("optgroup");
+              continentGroup.label = continent;
+              for (const country in proxy_list[continent]) {
+                const countryPrefix = `${country} - `;
+                for (const city in proxy_list[continent][country]) {
+                  const option = document.createElement("option");
+                  option.value = proxy_list[continent][country][city];
+                  option.textContent = `${countryPrefix}${city}`;
+                  continentGroup.appendChild(option);
+                }
+              }
+              locationsSelectElement.appendChild(continentGroup);
+            }
+          },
+          device_list: device_list => {
+            const devicesSelectElement = document.getElementById('devices-select');
+            device_list.forEach(deviceName => {
+              const option = document.createElement("option");
+              option.value = deviceName;
+              option.textContent = deviceName;
+              devicesSelectElement.appendChild(option);
+            });
+          },
+        };
+        Object.keys(configEndpoints).forEach(endpoint => {
+          const configRoutine = configEndpoints[endpoint];
+          fetch('/' + endpoint + '.json')
+            .then(response => response.json())
+            .then(configRoutine);
         });
       });
       const urlInput = document.getElementById('url-input');
