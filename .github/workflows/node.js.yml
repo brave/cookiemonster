@@ -27,7 +27,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: npm audit
+    - if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]' }}
+      run: npm audit
     - run: npm run lint
     - name: Run regression tests
       run: |
