@@ -64,6 +64,6 @@ jobs:
       - name: Trigger ECS deployment
         run: |
           aws ecs update-service --cluster ${{ vars.COOKIEMONSTER_ECS_CLUSTER_NAME }} --service ${{ vars.COOKIEMONSTER_ECS_SERVICE_NAME }} --force-new-deployment --query service.serviceName --output text
-          if [ $(($(date +%s) - ${{ steps.vars.outputs.START_TIMESTAMP }})) -gt 120 ]; then
+          if [ $(($(date +%s) - ${{ steps.vars.outputs.START_TIMESTAMP }})) -gt 75 ]; then
             aws ecs wait services-stable --cluster ${{ vars.COOKIEMONSTER_ECS_CLUSTER_NAME }} --services ${{ vars.COOKIEMONSTER_ECS_SERVICE_NAME }}
           fi
