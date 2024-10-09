@@ -22,6 +22,11 @@ jobs:
     environment:
       name: production
     steps:
+      - name: Store start time
+        id: start-time
+        run: |
+          echo "START_TIMESTAMP=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Git clone the repository
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
 
@@ -63,4 +68,6 @@ jobs:
       - name: Trigger ECS deployment
         run: |
           aws ecs update-service --cluster ${{ vars.COOKIEMONSTER_ECS_CLUSTER_NAME }} --service ${{ vars.COOKIEMONSTER_ECS_SERVICE_NAME }} --force-new-deployment --query service.serviceName --output text
-          aws ecs wait services-stable --cluster ${{ vars.COOKIEMONSTER_ECS_CLUSTER_NAME }} --services ${{ vars.COOKIEMONSTER_ECS_SERVICE_NAME }}
+          if [ $(($(date +%s) - ${{ steps.start-time.outputs.START_TIMESTAMP }})) -gt 120 ]; then
+            aws ecs wait services-stable --cluster ${{ vars.COOKIEMONSTER_ECS_CLUSTER_NAME }} --services ${{ vars.COOKIEMONSTER_ECS_SERVICE_NAME }}
+          fi
