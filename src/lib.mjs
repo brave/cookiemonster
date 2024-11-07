@@ -245,7 +245,7 @@ export const prepareProfile = async (args) => {
     return Array.from(elements)
       .map(el => el.innerText.trim())
       .filter(text => text !== '')
-      .every(spanText => ['Component already up to date', 'Component updated'].includes(spanText))
+      .every(spanText => ['Component already up to date', 'Up-to-date', 'Component updated'].includes(spanText))
   }, { timeout: 60000 })
   console.log('Components updated')
 
