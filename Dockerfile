@@ -17,13 +17,14 @@ RUN apt-get -qq update && \
     curl -fsSLo /usr/share/keyrings/${PACKAGE_NAME}-archive-keyring.gpg https://brave-browser-apt-${CHANNEL}.s3.brave.com/${PACKAGE_NAME}-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/${PACKAGE_NAME}-archive-keyring.gpg] https://brave-browser-apt-${CHANNEL}.s3.brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-${CHANNEL}.list && \
     apt-get -qq update && \
-    apt-get -qy install ${PACKAGE_NAME} fonts-dejavu-core fonts-noto-color-emoji --no-install-recommends && \
+    apt-get -qy install ${PACKAGE_NAME} fonts-dejavu-core fonts-noto-color-emoji patch --no-install-recommends && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 
 WORKDIR /app
 COPY package*.json /app
 RUN npm ci
+RUN npm run rebrowser-patches
 COPY . /app
 
 RUN chown -R node:node /app
