@@ -8,5 +8,16 @@
       "matchUpdateTypes": ["major"],
       "enabled": true
     }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/testcases/**",
+    "**/__fixtures__/**"
   ]
 }
