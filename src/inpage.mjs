@@ -73,14 +73,19 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return false
   })
 
-  const documentRect = document.documentElement.getBoundingClientRect()
+  const windowRect = {
+    left: 0,
+    right: window.innerWidth,
+    top: 0,
+    bottom: window.innerHeight
+  }
 
   const visibleElements = contentCheckedElements.filter(node => {
     const nodeRect = node.getBoundingClientRect()
-    if (nodeRect.left >= documentRect.right ||
-        nodeRect.right <= documentRect.left ||
-        nodeRect.top >= documentRect.bottom ||
-        nodeRect.bottom <= documentRect.top) {
+    if (nodeRect.left >= windowRect.right ||
+        nodeRect.right <= windowRect.left ||
+        nodeRect.top >= windowRect.bottom ||
+        nodeRect.bottom <= windowRect.top) {
       return false
     }
     return true
