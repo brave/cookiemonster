@@ -10,7 +10,8 @@ export const puppeteerConfigForArgs = async (args) => {
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-gpu',
-      '--disable-features=BraveAdblockCookieListDefault,BraveAdblockMobileNotificationsListDefault'
+      '--disable-features=BraveAdblockCookieListDefault,BraveAdblockMobileNotificationsListDefault',
+      '--disable-component-update'
     ],
     executablePath: args.executablePath,
     ignoreDefaultArgs: [
