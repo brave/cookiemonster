@@ -9,6 +9,7 @@
   "scripts": {
     "setup": "node src/setup.mjs",
     "serve": "node --import ./src/instrument.mjs src/api.mjs",
+    "rebrowser-patches": "rebrowser-patches patch --packageName puppeteer-core",
     "test": "node src/test.mjs",
     "lint": "standard",
     "lint-fix": "standard --fix"
@@ -21,9 +22,10 @@
     "@sentry/node": "^8.26.0",
     "koa": "^2.15.3",
     "proxy-chain": "^2.5.3",
-    "puppeteer-core": "^23.0.0",
+    "puppeteer-core": "~23.6.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "rebrowser-patches": "^1.0.15",
     "rehype-format": "^5.0.0",
     "rehype-parse": "^9.0.0",
     "rehype-stringify": "^10.0.0",
