@@ -21,19 +21,20 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 
+USER node
 WORKDIR /app
 COPY package*.json /app
 RUN npm ci
 RUN npm run rebrowser-patches
 COPY . /app
 
-RUN chown -R node:node /app
-USER node
-
 ARG SETUP_CACHEBUST=0
 
-RUN npm run setup -- ${BRAVE_BINARY}
-RUN chmod -R o+rX /app/profile
+RUN npm run setup -- ${BRAVE_BINARY} && chmod -R o+rX /app/profile
 
 EXPOSE 3000
-CMD npm run serve -- ${BRAVE_BINARY} 3000
+COPY --chmod=755 <<EOT /docker-entrypoint.sh
+#!/bin/sh
+exec npm run serve -- ${BRAVE_BINARY} 3000
+EOT
+ENTRYPOINT ["/docker-entrypoint.sh"]
