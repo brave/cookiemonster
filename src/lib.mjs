@@ -36,14 +36,20 @@ const openai = new OpenAI({
   apiKey: 'ollama'
 })
 
+const MAX_LENGTH = 500
+
 const inPageAPI = {
   classifyInnerText: (innerText) => {
+    let innerTextSnippet = innerText.slice(0, MAX_LENGTH)
+    if (innerTextSnippet.length !== innerText.length) {
+      innerTextSnippet += '...'
+    }
     const prompt = `An overlay element is considered to be a "cookie consent notice" if it notifies the user of the site's use of cookies or other storage technology, provides a link to a privacy policy or terms of service document, and/or offers the user choices for the usage of cookies on the site.
 
 The following text was captured from the innerText of an HTML overlay element:
 
 \`\`\`
-${innerText}
+${innerTextSnippet}
 \`\`\`
 
 Is the overlay element above considered to be a "cookie consent notice"? Answer in one word.
@@ -53,6 +59,11 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
     return openai.chat.completions.create({
       model: 'llama3',
       messages: [{ role: 'user', content: prompt }],
+      // We only need enough tokens for "Yes" or "No"
+      max_tokens: 1,
+      // Fixed seed and zero temperature to avoid randomized responses
+      seed: 1,
+      temperature: 0
     }).then(response => {
       const answer = response.choices[0].message.content
       return answer.match(/yes/i)
