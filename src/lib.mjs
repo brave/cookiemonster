@@ -125,7 +125,7 @@ export const checkPage = async (args) => {
     // Track all domains that scripts are loaded from
     page.on('response', (response) => {
       const domain = new URL(response.url()).hostname
-      if (response.request().resourceType() === 'script') {
+      if (['script', 'fetch', 'xhr'].includes(response.request().resourceType())) {
         report.scriptSources.add(domain)
       }
     })
