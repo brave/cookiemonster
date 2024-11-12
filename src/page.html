@@ -324,6 +324,78 @@ details pre {
           };
         }
 
+        if (report.scriptSources && report.scriptSources.length > 0) {
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = `Script sources (${report.scriptSources.length})`;
+          details.appendChild(summary);
+          const matchesPre = document.createElement('pre');
+
+          // Add filter input box
+          const filterInput = document.createElement('input');
+          filterInput.type = 'text';
+          filterInput.placeholder = 'Filter domains with regex...';
+          filterInput.style.width = '100%';
+          filterInput.style.marginBottom = '0.5em';
+          filterInput.style.padding = '0.5em';
+          filterInput.style.boxSizing = 'border-box';
+          filterInput.style.fontFamily = 'monospace';
+
+          const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+          // Function to update the pre content based on filter
+          const updateContent = (filterValue) => {
+            try {
+              const regex = filterValue ? new RegExp(filterValue) : null;
+              const filteredSources = report.scriptSources.filter(domain =>
+                !regex || regex.test(domain)
+              );
+              const adblockRules = [
+                `! ${today} ${report.url}`,
+                ...filteredSources.map(domain => `||${domain}^`)
+              ].join('\n');
+              matchesPre.textContent = adblockRules;
+            } catch (e) {
+              // Invalid regex - show all results
+              const adblockRules = [
+                `! ${today} ${report.url}`,
+                ...report.scriptSources.map(domain => `||${domain}^`)
+              ].join('\n');
+              matchesPre.textContent = adblockRules;
+            }
+          };
+
+          // Add filter input event listener
+          filterInput.addEventListener('input', (e) => {
+            updateContent(e.target.value);
+          });
+
+          details.appendChild(filterInput);
+
+          // Add copy button
+          const copyButton = document.createElement('button');
+          copyButton.textContent = 'Copy rules';
+          copyButton.style.fontSize = '0.8em';
+          copyButton.style.padding = '0.5em 1em';
+          copyButton.style.marginBottom = '0.5em';
+          copyButton.onclick = () => {
+            navigator.clipboard.writeText(matchesPre.textContent);
+            const originalText = copyButton.textContent;
+            copyButton.textContent = 'Copied!';
+            setTimeout(() => {
+              copyButton.textContent = originalText;
+            }, 2000);
+          };
+
+          details.appendChild(copyButton);
+          details.appendChild(matchesPre);
+
+          // Initialize content
+          updateContent('');
+
+          card.appendChild(details);
+        }
+
         return card;
       }
 
