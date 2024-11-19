@@ -38,6 +38,25 @@ const openai = new OpenAI({
 
 const MAX_LENGTH = 500
 
+const keywordClassifierFallback = (innerText) => {
+  const keywords = [
+    'cookies',
+    'consent',
+    'privacy',
+    'analytics',
+    'accept',
+    'only necessary',
+    'reject'
+  ]
+  const lower = innerText.toLowerCase()
+  for (const keyword of keywords) {
+    if (lower.includes(keyword)) {
+      return true
+    }
+  }
+  return false
+}
+
 const inPageAPI = {
   classifyInnerText: (innerText) => {
     let innerTextSnippet = innerText.slice(0, MAX_LENGTH)
@@ -67,7 +86,7 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
     }).then(response => {
       const answer = response.choices[0].message.content
       return answer.match(/yes/i)
-    })
+    }).catch(_e => keywordClassifierFallback(innerText))
   },
   getETLDP1: (() => {
     let init
