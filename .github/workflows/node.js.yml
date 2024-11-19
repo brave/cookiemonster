@@ -38,4 +38,9 @@ jobs:
         sudo apt update
         sudo apt install brave-browser patch
         npm run rebrowser-patches
+        curl -L https://ollama.com/download/ollama-linux-amd64.tgz -o ollama-linux-amd64.tgz
+        sudo tar -C /usr -xzf ollama-linux-amd64.tgz
+        ollama serve &
+        sleep 10
+        ollama pull llama3
         npm run test -- /usr/bin/brave-browser
