@@ -17,6 +17,8 @@ services:
 
   brave_ollama:
     <<: *brave_base
+    environment:
+      - OPENAI_BASE_URL=http://ollama:11434/v1
     profiles:
       - ollama
     depends_on:
