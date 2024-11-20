@@ -20,12 +20,6 @@ RUN apt-get -qq update && \
     apt-get -qy install ${PACKAGE_NAME} fonts-dejavu-core fonts-noto-color-emoji patch --no-install-recommends && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-RUN curl -L https://ollama.com/download/ollama-linux-amd64.tgz -o ollama-linux-amd64.tgz && \
-    sudo tar -C /usr -xzf ollama-linux-amd64.tgz
-RUN ollama serve & \
-    sleep 5 && \
-    ollama pull llama3
-
 USER node
 WORKDIR /app
 COPY package*.json /app
@@ -40,7 +34,6 @@ RUN npm run setup -- ${BRAVE_BINARY} && chmod -R o+rX /app/profile
 EXPOSE 3000
 COPY --chmod=755 <<EOT /docker-entrypoint.sh
 #!/bin/sh
-ollama serve &
 exec npm run serve -- ${BRAVE_BINARY} 3000
 EOT
 ENTRYPOINT ["/docker-entrypoint.sh"]

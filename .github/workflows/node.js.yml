@@ -11,9 +11,13 @@ on:
 
 jobs:
   build:
+    services:
+      ollama:
+        image: ollama/ollama:latest
+        ports:
+          - 11434:11434
 
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [20.x]
@@ -30,17 +34,39 @@ jobs:
     - if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]' }}
       run: npm audit
     - run: npm run lint
-    - name: Run regression tests
+
+    - name: Setup Environment
       run: |
         sudo apt install curl
+
+        # Initiate model pull early to run in background
+        echo "Initiating Ollama model pull..."
+        curl -s -f -L http://localhost:11434/api/pull -H "Content-Type: application/json" \
+          -d '{"name": "llama3", "stream": false}' &
+
         sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
         sudo apt update
         sudo apt install brave-browser patch
         npm run rebrowser-patches
-        curl -L https://ollama.com/download/ollama-linux-amd64.tgz -o ollama-linux-amd64.tgz
-        sudo tar -C /usr -xzf ollama-linux-amd64.tgz
-        ollama serve &
-        sleep 10
-        ollama pull llama3
-        npm run test -- /usr/bin/brave-browser
+
+    - name: Wait for Ollama model pull
+      run: |
+        # Stream pull progress
+        echo "Displaying Ollama model pull progress..."
+        curl -s -f -L http://localhost:11434/api/pull -H "Content-Type: application/json" \
+          -d '{"name": "llama3"}'
+
+        # Wait for Ollama to be ready
+        echo "Waiting for Ollama service..."
+        for i in {1..5}; do
+          if curl -s -f http://localhost:11434 >/dev/null 2>&1; then
+            echo "Ollama is running"
+            break
+          fi
+          echo "Attempt $i failed. Waiting before next attempt..."
+          sleep 5
+        done
+
+    - name: Run Tests
+      run: npm run test -- /usr/bin/brave-browser

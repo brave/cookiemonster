@@ -1,11 +1,45 @@
+x-brave-base: &brave_base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  init: true
+  image: ${DOCKER_REPOSITORY:-brave/cookiemonster}:latest
+  volumes:
+    - .:/app
+  env_file: .env
+  ports:
+    - "3000:3000"
+
 services:
   brave:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ${DOCKER_REPOSITORY:-brave/cookiemonster}:latest
+    <<: *brave_base
+    profiles: [""]
+
+  brave_ollama:
+    <<: *brave_base
+    profiles:
+      - ollama
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
     volumes:
-      - .:/app
-    env_file: .env
-    ports:
-      - "3000:3000"
+      - ollama_data:/root/.ollama
+    command: ["serve"]
+    # requires Docker Compose v2.30+
+    post_start:
+      - command:
+          - /bin/sh
+          - -c
+          - |
+            apt-get update && \
+            apt-get install -y curl --no-install-recommends && \
+            curl http://localhost:11434/api/pull \
+              -H 'Content-Type: application/json' \
+              -d '{"name": "llama3", "stream": true}'
+        user: root
+
+volumes:
+  ollama_data:
