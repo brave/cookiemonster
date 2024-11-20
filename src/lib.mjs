@@ -86,7 +86,10 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
     }).then(response => {
       const answer = response.choices[0].message.content
       return answer.match(/yes/i)
-    }).catch(_e => keywordClassifierFallback(innerText))
+    }).catch(e => {
+      console.error('LLM classification failed:', e)
+      return keywordClassifierFallback(innerText)
+    })
   },
   getETLDP1: (() => {
     let init
