@@ -90,7 +90,7 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
       model: process.env.OPENAI_MODEL || 'llama3',
       messages: [{ role: 'user', content: prompt }],
       // We only need enough tokens for "Yes" or "No"
-      max_tokens: 1,
+      max_tokens: 2,
       // Fixed seed and zero temperature to avoid randomized responses
       seed: 1,
       temperature: 0
