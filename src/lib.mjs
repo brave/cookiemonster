@@ -85,8 +85,9 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
 
 
 `
+    console.log('Attempting to classify inner text with LLM')
     return openai.chat.completions.create({
-      model: 'llama3',
+      model: process.env.OPENAI_MODEL || 'llama3',
       messages: [{ role: 'user', content: prompt }],
       // We only need enough tokens for "Yes" or "No"
       max_tokens: 1,
@@ -95,6 +96,7 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
       temperature: 0
     }).then(response => {
       const answer = response.choices[0].message.content
+      console.log('LLM classification:', answer)
       return answer.match(/yes/i)
     }).catch(e => {
       console.error('LLM classification failed:', e)
