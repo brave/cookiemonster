@@ -102,20 +102,19 @@ export async function inPageRoutine (randomToken, hostOverride) {
     }
   }
 
+  const classifiersUsed = new Set()
   const contentCheckedElements = await asyncFilter(uncontainedElements, async node => {
     const innerText = node.innerText
     if (innerText.trim() === '') {
       return false
     }
-    const b = await hostAPI.classifyInnerText(node.innerText)
-    return b
+    const { classifier, classification } = await hostAPI.classifyInnerText(node.innerText)
+    classifiersUsed.add(classifier)
+    return classification
   })
 
-  if (contentCheckedElements.length === 1) {
-    return contentCheckedElements[0]
-  } else if (contentCheckedElements.length === 0) {
-    return undefined
-  } else {
-    return contentCheckedElements
+  return {
+    elements: contentCheckedElements,
+    classifiersUsed: Array.from(classifiersUsed).sort()
   }
 }

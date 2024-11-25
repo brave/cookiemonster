@@ -97,10 +97,16 @@ Is the overlay element above considered to be a "cookie consent notice"? Answer 
     }).then(response => {
       const answer = response.choices[0].message.content
       console.log('LLM classification:', answer)
-      return answer.match(/yes/i)
+      return {
+        classifier: 'llm',
+        classification: answer.match(/yes/i)
+      }
     }).catch(e => {
       console.error('LLM classification failed:', e)
-      return keywordClassifierFallback(innerText)
+      return {
+        classifier: 'keyword',
+        classification: keywordClassifierFallback(innerText)
+      }
     })
   },
   getETLDP1: (() => {
@@ -224,25 +230,27 @@ export const checkPage = async (args) => {
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
     const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
     try {
-      if (await inPageResult.evaluate(r => r !== undefined)) {
-        const l = await inPageResult.evaluate(r => r.length)
-        if (l !== undefined && l > 1) {
-          throw new Error('Too many candidate elements detected (' + l + ')')
-        }
+      const l = await inPageResult.evaluate(r => r.elements.length)
+      if (l > 1) {
+        throw new Error('Too many candidate elements detected (' + l + ')')
+      }
+      if (l === 1) {
         report.identified = true
-        const boundingBox = await inPageResult.boundingBox()
+        const element = await inPageResult.evaluateHandle(r => r.elements[0])
+        const boundingBox = await element.boundingBox()
         if (boundingBox.height === 0 || boundingBox.width === 0) {
           // it won't work for a screenshot. Find another element to capture, somehow
         } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
-          const screenshotB64 = await inPageResult.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
+          const screenshotB64 = await element.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
           report.screenshot = screenshotB64
         }
         report.markup = String(await unified()
           .use(rehypeParse, { fragment: true })
           .use(rehypeFormat)
           .use(rehypeStringify)
-          .process(await inPageResult.evaluate(e => e.outerHTML))).trim()
+          .process(await element.evaluate(e => e.outerHTML))).trim()
       }
+      report.classifiersUsed = await inPageResult.evaluate(r => r.classifiersUsed)
       // Add full page screenshot if explicitly requested or if no element was detected and screenshot is set to "always"
       if (['always', 'fullPage'].includes(includeScreenshot) && !report.screenshot) {
         // TODO: scroll to bottom to trigger lazy-loaded elements
