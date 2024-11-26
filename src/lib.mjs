@@ -65,7 +65,9 @@ const inPageAPI = {
       innerTextSnippet += '...'
       ifTruncated = `the first ${MAX_LENGTH} characters of `
     }
-    const prompt = `An overlay element is considered to be a "cookie consent notice" if it meets all of these criteria:
+    const systemPrompt = `Your task is to classify text from the innerText property of HTML overlay elements.
+
+An overlay element is considered to be a "cookie consent notice" if it meets all of these criteria:
 1. it explicitly notifies the user of the site's use of cookies or other storage technology, such as: "We use cookies...", "This site uses...", etc.
 2. it offers the user choices for the usage of cookies on the site, such as: "Accept", "Reject", "Learn More", etc., or informs the user that their use of the site means they accept the usage of cookies.
 
@@ -74,7 +76,8 @@ const inPageAPI = {
 **Note:** A cookie consent notice should specifically relate to the site's use of cookies or other storage technology that stores data on the user's device, such as HTTP cookies, local storage, or session storage. Requests for permission to access geolocation information, camera, microphone, etc., do not fall under this category.
 
 **Note:** Do NOT classify a website header or footer as a "cookie consent notice". Website headers or footers may contain a list of links, possibly including a privacy policy, cookie policy, or terms of service document, but their primary purpose is navigational rather than informational.
-
+`
+    const prompt = `
 The following text was captured from ${ifTruncated}the innerText of an HTML overlay element:
 
 \`\`\`
@@ -82,13 +85,14 @@ ${innerTextSnippet}
 \`\`\`
 
 Is the overlay element above considered to be a "cookie consent notice"? Answer in one word.
-
-
 `
     console.log('Attempting to classify inner text with LLM')
     return openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'llama3',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
       // We only need enough tokens for "Yes" or "No"
       max_tokens: 2,
       // Fixed seed and zero temperature to avoid randomized responses
