@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 env:
-  #BEDROCK_MODEL: "meta.llama3-8b-instruct-v1:0"
-  BEDROCK_MODEL: "us.meta.llama3-2-11b-instruct-v1:0"
+  BEDROCK_MODEL: "meta.llama3-8b-instruct-v1:0"
+  #BEDROCK_MODEL: "us.meta.llama3-2-11b-instruct-v1:0"
 
 jobs:
   build:
