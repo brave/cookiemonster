@@ -86,7 +86,6 @@ jobs:
           -e "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}" \
           -e "AWS_REGION=${AWS_REGION}" \
           -e "DEFAULT_MODEL=${BEDROCK_MODEL}" \
-          -e DEBUG=true \
           366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest
 
     #- name: Wait for Ollama model pull
@@ -113,5 +112,4 @@ jobs:
         OPENAI_BASE_URL: http://localhost:11434/api/v1
         OPENAI_MODEL: ${{ env.BEDROCK_MODEL }}
       run: |
-        docker logs -f bedrock-proxy &
         npm run test -- /usr/bin/brave-browser
