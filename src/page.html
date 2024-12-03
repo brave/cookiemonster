@@ -137,6 +137,14 @@ details pre {
 #devices-select {
   width: 15em; /* Shortens the width of the devices-select dropdown */
 }
+.warning-icon {
+  background: hsl(45deg 100% 85%);
+  color: hsl(45deg 100% 20%);
+  padding: 0.25em 1em;
+  margin-left: 0.5em;
+  border-radius: 1em;
+  cursor: help;
+}
     </style>
   </head>
   <body>
@@ -279,13 +287,25 @@ details pre {
           return card;
         }
 
+        const appendClassifierWarning = (p, report) => {
+          if (report.classifiersUsed.includes('keyword')) {
+            const span = document.createElement('span');
+            span.textContent = '!';
+            span.classList.add('warning-icon')
+            span.title = 'Fallback classifier used. Result may be inaccurate.';
+            p.appendChild(span);
+          }
+        }
+
         if (report.identified !== true) {
           const p = document.createElement('p');
           p.textContent = 'No cookie consent notices were identified.';
+          appendClassifierWarning(p, report)
           card.appendChild(p);
         } else {
           const p = document.createElement('p');
           p.textContent = 'A cookie consent notice was identified.';
+          appendClassifierWarning(p, report)
           card.appendChild(p);
 
           if (report.markup !== undefined) {

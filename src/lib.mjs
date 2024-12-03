@@ -14,6 +14,7 @@ import rehypeStringify from 'rehype-stringify'
 import { unified } from 'unified'
 import * as Sentry from '@sentry/node'
 
+import OpenAI from 'openai'
 import proxyChain from 'proxy-chain'
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
@@ -30,7 +31,88 @@ const generateRandomToken = () => {
   return Math.floor(Math.random() * (max - min) + min).toString(36)
 }
 
+const openai = new OpenAI({
+  baseURL: process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1',
+  apiKey: process.env.OPENAI_API_KEY || 'ollama'
+})
+
+const MAX_LENGTH = 500
+
+const keywordClassifierFallback = (innerText) => {
+  const keywords = [
+    'cookies',
+    'consent',
+    'privacy',
+    'analytics',
+    'accept',
+    'only necessary',
+    'reject'
+  ]
+  const lower = innerText.toLowerCase()
+  for (const keyword of keywords) {
+    if (lower.includes(keyword)) {
+      return true
+    }
+  }
+  return false
+}
+
 const inPageAPI = {
+  classifyInnerText: (innerText) => {
+    let innerTextSnippet = innerText.slice(0, MAX_LENGTH)
+    let ifTruncated = ''
+    if (innerTextSnippet.length !== innerText.length) {
+      innerTextSnippet += '...'
+      ifTruncated = `the first ${MAX_LENGTH} characters of `
+    }
+    const systemPrompt = `Your task is to classify text from the innerText property of HTML overlay elements.
+
+An overlay element is considered to be a "cookie consent notice" if it meets all of these criteria:
+1. it explicitly notifies the user of the site's use of cookies or other storage technology, such as: "We use cookies...", "This site uses...", etc.
+2. it offers the user choices for the usage of cookies on the site, such as: "Accept", "Reject", "Learn More", etc., or informs the user that their use of the site means they accept the usage of cookies.
+
+Note: This definition does not include adult content notices or any other type of notice that is primarily focused on age verification or content restrictions. Cookie consent notices are specifically intended to inform users about the website's use of cookies and obtain their consent for such use.
+
+Note: A cookie consent notice should specifically relate to the site's use of cookies or other storage technology that stores data on the user's device, such as HTTP cookies, local storage, or session storage. Requests for permission to access geolocation information, camera, microphone, etc., do not fall under this category.
+
+Note: Do NOT classify a website header or footer as a "cookie consent notice". Website headers or footers may contain a list of links, possibly including a privacy policy, cookie policy, or terms of service document, but their primary purpose is navigational rather than informational.
+`
+    const prompt = `
+The following text was captured from ${ifTruncated}the innerText of an HTML overlay element:
+
+\`\`\`
+${innerTextSnippet}
+\`\`\`
+
+Is the overlay element above considered to be a "cookie consent notice"? Provide your answer as a boolean.
+`
+    return openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'llama3',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
+      // We only need enough tokens for "true" or "false"
+      max_tokens: 2,
+      // Fixed seed and zero temperature to avoid randomized responses
+      seed: 1,
+      temperature: 0,
+      // Only consider the single most likely next token
+      top_p: 0
+    }).then(response => {
+      const answer = response.choices[0].message.content
+      return {
+        classifier: 'llm',
+        classification: answer.match(/true/i)
+      }
+    }).catch(e => {
+      console.error('LLM classification failed:', e)
+      return {
+        classifier: 'keyword',
+        classification: keywordClassifierFallback(innerText)
+      }
+    })
+  },
   getETLDP1: (() => {
     let init
     return (hostname) => {
@@ -93,7 +175,6 @@ export const checkPage = async (args) => {
   }
   const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile, proxyServer: proxyUrl })
 
-  console.log('Launching browser')
   const browser = await Sentry.startSpan({ name: 'Launch Browser' }, () => {
     return puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
   })
@@ -130,7 +211,6 @@ export const checkPage = async (args) => {
     await Sentry.startSpan({ name: 'domcontentloaded' }, () => {
       return page.goto(url, { waitUntil: 'domcontentloaded' })
     })
-    console.log('Page loaded')
 
     const waitTimeMs = args.seconds * 1000
 
@@ -152,25 +232,27 @@ export const checkPage = async (args) => {
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
     const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
     try {
-      if (await inPageResult.evaluate(r => r !== undefined)) {
-        const l = await inPageResult.evaluate(r => r.length)
-        if (l !== undefined && l > 1) {
-          throw new Error('Too many candidate elements detected (' + l + ')')
-        }
+      const l = await inPageResult.evaluate(r => r.elements.length)
+      if (l > 1) {
+        throw new Error('Too many candidate elements detected (' + l + ')')
+      }
+      if (l === 1) {
         report.identified = true
-        const boundingBox = await inPageResult.boundingBox()
+        const element = await inPageResult.evaluateHandle(r => r.elements[0])
+        const boundingBox = await element.boundingBox()
         if (boundingBox.height === 0 || boundingBox.width === 0) {
           // it won't work for a screenshot. Find another element to capture, somehow
         } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
-          const screenshotB64 = await inPageResult.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
+          const screenshotB64 = await element.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
           report.screenshot = screenshotB64
         }
         report.markup = String(await unified()
           .use(rehypeParse, { fragment: true })
           .use(rehypeFormat)
           .use(rehypeStringify)
-          .process(await inPageResult.evaluate(e => e.outerHTML))).trim()
+          .process(await element.evaluate(e => e.outerHTML))).trim()
       }
+      report.classifiersUsed = await inPageResult.evaluate(r => r.classifiersUsed)
       // Add full page screenshot if explicitly requested or if no element was detected and screenshot is set to "always"
       if (['always', 'fullPage'].includes(includeScreenshot) && !report.screenshot) {
         // TODO: scroll to bottom to trigger lazy-loaded elements
@@ -188,7 +270,6 @@ export const checkPage = async (args) => {
     await page.close()
 
     await browser.close()
-    console.log('Browser closed')
     if (args.location) {
       await proxyChain.closeAnonymizedProxy(proxyUrl, true)
       console.log('Proxy closed')

@@ -9,11 +9,25 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  BEDROCK_MODEL: "meta.llama3-8b-instruct-v1:0"
+  #BEDROCK_MODEL: "us.meta.llama3-2-11b-instruct-v1:0"
+
 jobs:
   build:
+    environment:
+      name: ci
+    #services:
+    #  ollama:
+    #    image: ollama/ollama:latest
+    #    ports:
+    #      - 11434:11434
 
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [20.x]
@@ -21,6 +35,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-session-name: github-actions-nodejs
+        aws-region: us-east-1
+
+      # Log in to the awslabs ECR repository
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+      with:
+        registries: 366590864501
+
+    - name: Start background pull of bedrock proxy image
+      run: |
+        nohup docker pull 366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest > /dev/null 2>&1 &
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
       with:
@@ -30,12 +62,54 @@ jobs:
     - if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]' }}
       run: npm audit
     - run: npm run lint
-    - name: Run regression tests
+
+    - name: Setup Environment
       run: |
         sudo apt install curl
+
+        # Initiate model pull early to run in background
+        #echo "Initiating Ollama model pull..."
+        #curl -s -f -L http://localhost:11434/api/pull -H "Content-Type: application/json" \
+        #  -d '{"name": "llama3", "stream": false}' &
+
         sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
         sudo apt update
         sudo apt install brave-browser patch
         npm run rebrowser-patches
+
+    - name: Start Bedrock Proxy
+      run: |
+        docker run --rm -d --name bedrock-proxy -p 11434:80 \
+          -e "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" \
+          -e "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" \
+          -e "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}" \
+          -e "AWS_REGION=${AWS_REGION}" \
+          -e "DEFAULT_MODEL=${BEDROCK_MODEL}" \
+          366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest
+
+    #- name: Wait for Ollama model pull
+    #  run: |
+    #    # Stream pull progress
+    #    echo "Displaying Ollama model pull progress..."
+    #    curl -s -f -L http://localhost:11434/api/pull -H "Content-Type: application/json" \
+    #      -d '{"name": "llama3"}'
+    #
+    #    # Wait for Ollama to be ready
+    #    echo "Waiting for Ollama service..."
+    #    for i in {1..5}; do
+    #      if curl -s -f http://localhost:11434 >/dev/null 2>&1; then
+    #        echo "Ollama is running"
+    #        break
+    #      fi
+    #      echo "Attempt $i failed. Waiting before next attempt..."
+    #      sleep 5
+    #    done
+
+    - name: Run Tests
+      env:
+        OPENAI_API_KEY: bedrock
+        OPENAI_BASE_URL: http://localhost:11434/api/v1
+        OPENAI_MODEL: ${{ env.BEDROCK_MODEL }}
+      run: |
         npm run test -- /usr/bin/brave-browser

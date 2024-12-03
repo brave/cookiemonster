@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node'
 Sentry.init({
   tracesSampleRate: 1.0,
   tracePropagationTargets: [],
+  registerEsmLoaderHooks: { exclude: [/openai/] },
   integrations: function (integrations) {
     // Remove HTTP Integration, it breaks proxy requests
     return integrations.filter(function (integration) {
