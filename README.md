@@ -12,31 +12,53 @@ Cookiemonster is currently being developed as a Web app which will help us run c
 
 ## Setup
 
-Install [Brave Browser](https://brave.com/linux/), and [xvfb](https://www.x.org/releases/X11R7.6/doc/man/man1/Xvfb.1.xhtml), which is required for optimal headless operation.
+### Local Setup
+1. Install [Brave Browser](https://brave.com/linux/).
 
-Install dependencies and then setup browser profiles for future use:
-```
+2. Install dependencies and setup browser profiles:
+```bash
 npm install
 npm run setup -- /path/to/brave
 ```
 
-If the browser profiles need to be updated, remove the `profiles` directory and run the `setup` script again.
+Note: If browser profiles need to be updated, remove the `profiles` directory and run the setup again.
+
+### Docker Setup
+1. Ensure you have Docker and Docker Compose installed.
+
+2. Run the initial setup:
+```bash
+cp .env.example .env
+docker compose run --rm --entrypoint ./docker_setup.sh brave
+```
+
+Note: If browser profiles need to be updated, run the setup command again.
 
 ## Running
 
-Run the following:
-
-```
+### Local
+Start the server:
+```bash
 npm run serve
 ```
 
-...then visit `localhost:3000` in your browser.
-
-If needed, you can pass a path to a different browser binary, and a different port to run on, e.g.:
-
-```
+You can customize the browser and port:
+```bash
 npm run serve -- /usr/bin/brave-nightly 8000
 ```
+
+### Docker
+1. Basic setup (without LLM support):
+```bash
+docker compose up brave
+```
+
+2. With LLM support via Ollama:
+```bash
+docker compose --profile ollama up brave_ollama
+```
+
+For both setups, visit `localhost:3000` in your browser.
 
 ## Using as a library
 
