@@ -97,7 +97,9 @@ Is the overlay element above considered to be a "cookie consent notice"? Provide
       max_tokens: 2,
       // Fixed seed and zero temperature to avoid randomized responses
       seed: 1,
-      temperature: 0
+      temperature: 0,
+      // Only consider the single most likely next token
+      top_p: 0
     }).then(response => {
       const answer = response.choices[0].message.content
       console.log('LLM classification:', answer)
