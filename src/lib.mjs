@@ -86,7 +86,6 @@ ${innerTextSnippet}
 
 Is the overlay element above considered to be a "cookie consent notice"? Provide your answer as a boolean.
 `
-    console.log('Attempting to classify inner text with LLM')
     return openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'llama3',
       messages: [
@@ -102,7 +101,6 @@ Is the overlay element above considered to be a "cookie consent notice"? Provide
       top_p: 0
     }).then(response => {
       const answer = response.choices[0].message.content
-      console.log('LLM classification:', answer)
       return {
         classifier: 'llm',
         classification: answer.match(/true/i)
@@ -177,7 +175,6 @@ export const checkPage = async (args) => {
   }
   const puppeteerArgs = await puppeteerConfigForArgs({ ...args, pathForProfile: workingProfile, proxyServer: proxyUrl })
 
-  console.log('Launching browser')
   const browser = await Sentry.startSpan({ name: 'Launch Browser' }, () => {
     return puppeteer.use(StealthPlugin()).launch(puppeteerArgs)
   })
@@ -214,7 +211,6 @@ export const checkPage = async (args) => {
     await Sentry.startSpan({ name: 'domcontentloaded' }, () => {
       return page.goto(url, { waitUntil: 'domcontentloaded' })
     })
-    console.log('Page loaded')
 
     const waitTimeMs = args.seconds * 1000
 
@@ -274,7 +270,6 @@ export const checkPage = async (args) => {
     await page.close()
 
     await browser.close()
-    console.log('Browser closed')
     if (args.location) {
       await proxyChain.closeAnonymizedProxy(proxyUrl, true)
       console.log('Proxy closed')
