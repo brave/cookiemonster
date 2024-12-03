@@ -151,7 +151,8 @@ export const checkPage = async (args) => {
 
   const report = {
     url,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    scriptSources: new Set()
   }
 
   const templateProfile = templateProfilePathForArgs(args)
@@ -201,6 +202,14 @@ export const checkPage = async (args) => {
         throw blockError
       }
     }
+
+    // Track all domains that scripts are loaded from
+    page.on('response', (response) => {
+      const domain = new URL(response.url()).hostname
+      if (['script', 'fetch', 'xhr'].includes(response.request().resourceType())) {
+        report.scriptSources.add(domain)
+      }
+    })
 
     // Emulate the device if the device name is set
     if (deviceName) {
@@ -277,6 +286,8 @@ export const checkPage = async (args) => {
 
     await fs.rm(workingProfile, { recursive: true })
   }
+
+  report.scriptSources = Array.from(report.scriptSources) // Convert Set to Array
   return report
 }
 
