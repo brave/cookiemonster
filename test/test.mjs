@@ -2,7 +2,7 @@ import { pathToFileURL } from 'url'
 import { createHash } from 'crypto'
 import path from 'path'
 
-import { checkPage, prepareProfile } from './lib.mjs'
+import { checkPage, prepareProfile } from '../src/lib.mjs'
 
 const args = {
   seconds: 0,
@@ -16,7 +16,7 @@ const args = {
 }
 
 async function testPage (testCasePath, expectedHash) {
-  const url = pathToFileURL(path.join('.', 'testcases', testCasePath, 'index.html')).href
+  const url = pathToFileURL(path.join(import.meta.dirname, 'data', testCasePath, 'index.html')).href
   return checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args }).then(r => {
     if (r.error) {
       console.log('[' + testCasePath + '] ERROR: ' + r.error)
