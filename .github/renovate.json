@@ -19,5 +19,8 @@
     "**/tests/**",
     "**/testcases/**",
     "**/__fixtures__/**"
-  ]
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  }
 }
