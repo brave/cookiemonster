@@ -10,6 +10,7 @@ import Koa from 'koa'
 import { bodyParser } from '@koa/bodyparser'
 import * as Sentry from '@sentry/node'
 import Router from '@koa/router'
+import nunjucks from 'nunjucks'
 
 import { checkPage } from './lib.mjs'
 import { getFilteredKnownDevices } from './util.mjs'
@@ -31,6 +32,12 @@ app.use(bodyParser())
 
 Sentry.setupKoaErrorHandler(app)
 
+const version = process.env.GIT_COMMIT ? process.env.GIT_COMMIT.slice(0, 6) : 'unknown'
+nunjucks.configure(path.join(import.meta.dirname, 'views'), {
+  autoescape: true,
+  noCache: version === 'unknown' // assume unknown commit is a development environment
+})
+
 const proxyList = process.env.PROXY_LIST ? JSON.parse(process.env.PROXY_LIST) : {}
 const validProxies = Object.keys(proxyList).reduce((acc, region) => {
   const countries = proxyList[region]
@@ -48,7 +55,9 @@ const router = new Router()
 
 // Define routes
 router.get('/', async (ctx) => {
-  ctx.body = await fs.readFile(path.join(import.meta.dirname, 'page.html'))
+  ctx.body = nunjucks.render('page.html.njk', {
+    version
+  })
   ctx.response.type = 'html'
 })
 
@@ -70,7 +79,16 @@ router.get('/device_list.json', async (ctx) => {
 })
 
 router.post('/check', async (ctx) => {
-  const { url, seconds, adblockLists, screenshot, location, slowCheck, device } = ctx.request.body
+  const {
+    url,
+    seconds,
+    adblockLists,
+    screenshot,
+    location,
+    slowCheck,
+    device,
+    mode
+  } = ctx.request.body
 
   // Validate device name
   if (device && !filteredDevices.includes(device)) {
@@ -95,10 +113,17 @@ router.post('/check', async (ctx) => {
     screenshot,
     location,
     slowCheck,
-    device
+    device,
+    mode
   })
-  ctx.body = JSON.stringify(report)
-  ctx.response.type = 'json'
+  if (mode === 'mhtml') {
+    ctx.attachment(`${new URL(url).hostname}-${Date.now()}.mhtml`)
+    ctx.body = report
+    ctx.response.type = 'mhtml'
+  } else {
+    ctx.body = JSON.stringify(report)
+    ctx.response.type = 'json'
+  }
 })
 
 app.use(router.routes())

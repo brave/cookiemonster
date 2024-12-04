@@ -20,6 +20,9 @@ RUN apt-get -qq update && \
     apt-get -qy install ${PACKAGE_NAME} fonts-dejavu-core fonts-noto-color-emoji patch --no-install-recommends && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
+ARG GIT_COMMIT
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 USER node
 WORKDIR /app
 COPY package*.json /app

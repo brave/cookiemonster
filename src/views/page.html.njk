@@ -137,6 +137,28 @@ details pre {
 #devices-select {
   width: 15em; /* Shortens the width of the devices-select dropdown */
 }
+
+.version {
+  color: #888;
+  margin-left: 1em;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.toast-message {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  display: none;
+  z-index: 1000;
+}
 .warning-icon {
   background: hsl(45deg 100% 85%);
   color: hsl(45deg 100% 20%);
@@ -181,13 +203,65 @@ details pre {
           <option value="">default</option>
         </select>
       </fieldset>
+
+      <fieldset id="dev_menu" style="display: none;">
+        <legend>Dev menu</legend>
+        <label>Mode:
+          <select id="mode-select" name="mode">
+            <option value="check">Check</option>
+            <option value="mhtml">Download MHTML</option>
+          </select>
+        </label>
+        <br>
+      </fieldset>
       </div>
     </form>
     <div id="spinner">🍪</div>
     <div id="reportlist"></div>
     <footer>
       <a href="https://github.com/brave/cookiemonster">Source code</a>
+      <span class="version">{{ version }}</span>
+      <div class="toast-message"></div>
     </footer>
+    <script>
+      const version = document.querySelector('.version');
+      const toast = document.querySelector('.toast-message');
+      const devMenu = document.getElementById('dev_menu');
+      let clicks = 0;
+      let clickTimer;
+      const REQUIRED_CLICKS = 7;
+
+      if (localStorage.getItem('devModeEnabled') === 'true') {
+        devMenu.style.display = 'block';
+      }
+
+      function showToast(message, duration = 2000) {
+        toast.textContent = message;
+        toast.style.display = 'block';
+        setTimeout(() => {
+          toast.style.display = 'none';
+        }, duration);
+      }
+
+      version.addEventListener('click', (e) => {
+        clicks++;
+
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => {
+          clicks = 0;
+        }, 2000);
+
+        if (clicks === REQUIRED_CLICKS) {
+          devMenu.style.display = 'block';
+          localStorage.setItem('devModeEnabled', 'true');
+          showToast('Dev mode enabled', 3000);
+          clicks = 0;
+        } else if (clicks > 2) {
+          const remaining = REQUIRED_CLICKS - clicks;
+          showToast(`You are now ${remaining} ${remaining === 1 ? 'step' : 'steps'} away from being a developer`);
+        }
+      });
+    </script>
     <script type="module">
       function toggleAllLists(checked) {
           const checkboxes = document.querySelectorAll('#adblock-lists input[type="checkbox"]:not(#toggle-all-lists)');
@@ -438,7 +512,7 @@ details pre {
                 acc[checkbox.id] = checkbox.checked;
                 return acc;
             }, {});
-        const newCard = await fetch('/check', {
+        const response = await fetch('/check', {
           method: 'POST',
           cache: 'no-cache',
           headers: {
@@ -450,18 +524,47 @@ details pre {
             location: locationSelector.value,
             screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true,
             slowCheck: document.getElementById('slow_check').checked,
-            device: document.getElementById('devices-select').value
+            device: document.getElementById('devices-select').value,
+            mode: document.getElementById('mode-select')?.value || 'check'
           }),
         })
-          .then(resp => resp.json())
-          .then(report => createReportCard(report, url))
+          .then(async resp => {
+            const mode = document.getElementById('mode-select')?.value
+            if (mode === 'mhtml') {
+              const blob = await resp.blob();
+              const mhtmlUrl = window.URL.createObjectURL(blob);
+
+              // Create hidden download link
+              const a = document.createElement('a');
+              a.style.display = 'none';
+              a.href = mhtmlUrl;
+              a.download = new URL(document.getElementById('url-input').value).hostname + '.mhtml';
+
+              // Add to document, click and cleanup
+              document.body.appendChild(a);
+              a.click();
+
+              // Cleanup after 30s to ensure download starts
+              setTimeout(() => {
+                window.URL.revokeObjectURL(mhtmlUrl);
+                document.body.removeChild(a);
+              }, 30000);
+
+              return null;
+            }
+            const report = await resp.json();
+            return createReportCard(report, url);
+          })
           .catch(error => createReportCard({ error, url, timestamp: new Date() }));
 
-        if (reportList.children.length > 0) {
-          reportList.insertBefore(newCard, reportList.children[0]);
-        } else {
-          reportList.appendChild(newCard);
+        if (response) {
+          if (reportList.children.length > 0) {
+            reportList.insertBefore(response, reportList.children[0]);
+          } else {
+            reportList.appendChild(response);
+          }
         }
+
         urlInput.disabled = false;
         locationSelector.disabled = false;
         for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {

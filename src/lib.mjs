@@ -148,6 +148,7 @@ export const checkPage = async (args) => {
   const slowCheck = args.slowCheck ?? false
   const blockNonHttpRequests = args.blockNonHttpRequests ?? true
   const deviceName = args.device
+  const mode = args.mode ?? 'check'
 
   const report = {
     url,
@@ -235,6 +236,16 @@ export const checkPage = async (args) => {
     }
 
     await setTimeout(waitTimeMs)
+
+    if (mode === 'mhtml') {
+      const session = await page.target().createCDPSession()
+      try {
+        const mhtml = await session.send('Page.captureSnapshot', { format: 'mhtml' })
+        return mhtml.data
+      } finally {
+        await session.detach()
+      }
+    }
 
     const randomToken = generateRandomToken()
 
