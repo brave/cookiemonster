@@ -96,21 +96,25 @@ const testCases = [
   ['zora.co', 'ZQGVsHwN2dm4XfAmUeYQeV2b0eJxM45CFdQtDyeVjU0=']
 ]
 
-let failed = 0
+const failures = []
 
 await prepareProfile(args)
-for (const [testCase, expectedHash] of testCases) {
-  const testPassed = await testPage(testCase, expectedHash)
+for (const testExpectation of testCases) {
+  const testPassed = await testPage(...testExpectation)
   if (!testPassed) {
-    failed += 1
+    failures.push(testExpectation[0])
   }
 }
 
 console.log('\n')
 
-if (failed === 0) {
+if (failures.length === 0) {
   console.log('All test cases passed.')
 } else {
-  console.log(`${testCases.length - failed} out of ${testCases.length} tests passed.`)
+  console.log(`${testCases.length - failures.length} out of ${testCases.length} tests passed.`)
+  console.log('Failures:')
+  for (const failure of failures) {
+    console.log(`  ${failure}`)
+  }
   process.exit(-1)
 }
