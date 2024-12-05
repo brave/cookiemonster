@@ -243,10 +243,9 @@ export const checkPage = async (args) => {
       try {
         const mhtmlData = await session.send('Page.captureSnapshot', { format: 'mhtml' })
 
-        if (mhtmlMode === 'sanitized') {
-          // TODO: Implement sanitization logic here
-          // For now, just adding a note that it's not implemented
-          console.warn('MHTML sanitization not yet implemented')
+        if (mhtmlMode === 'minified') {
+          // TODO: Implement minification logic here
+          console.warn('MHTML minification not yet implemented')
         }
 
         report.mhtml = mhtmlData.data
