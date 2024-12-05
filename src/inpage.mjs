@@ -126,8 +126,17 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return classification
   })
 
+  // Scroll blocking detection
+  let scrollBlocked = false
+  if (document.querySelectorAll('dialog[open]').length === 0) {
+    if (getComputedStyle(document.body).overflowY === 'hidden') {
+      scrollBlocked = true
+    }
+  }
+
   return {
     elements: contentCheckedElements,
-    classifiersUsed: Array.from(classifiersUsed).sort()
+    classifiersUsed: Array.from(classifiersUsed).sort(),
+    scrollBlocked
   }
 }
