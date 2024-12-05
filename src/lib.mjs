@@ -294,6 +294,7 @@ export const checkPage = async (args) => {
         const screenshotB64 = await page.screenshot({ fullPage: true, omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
         report.screenshot = screenshotB64
       }
+      report.scrollBlocked = ((await inPageResult.evaluate(r => r.scrollBlocked)) === true)
     } catch (err) {
       report.error = err.message
     } finally {
