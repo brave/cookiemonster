@@ -148,7 +148,7 @@ export const checkPage = async (args) => {
   const slowCheck = args.slowCheck ?? false
   const blockNonHttpRequests = args.blockNonHttpRequests ?? true
   const deviceName = args.device
-  const mode = args.mode ?? 'check'
+  const mhtmlMode = args.mhtml ?? 'omit'
 
   const report = {
     url,
@@ -237,11 +237,19 @@ export const checkPage = async (args) => {
 
     await setTimeout(waitTimeMs)
 
-    if (mode === 'mhtml') {
+    // Capture MHTML if requested
+    if (mhtmlMode !== 'omit') {
       const session = await page.target().createCDPSession()
       try {
-        const mhtml = await session.send('Page.captureSnapshot', { format: 'mhtml' })
-        return mhtml.data
+        const mhtmlData = await session.send('Page.captureSnapshot', { format: 'mhtml' })
+
+        if (mhtmlMode === 'sanitized') {
+          // TODO: Implement sanitization logic here
+          // For now, just adding a note that it's not implemented
+          console.warn('MHTML sanitization not yet implemented')
+        }
+
+        report.mhtml = mhtmlData.data
       } finally {
         await session.detach()
       }

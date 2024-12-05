@@ -35,7 +35,7 @@ pre,code {
   padding: 0.5em;
 }
 code {
-  padding: 0.2em 1em;
+  padding: 0.2em 0.5em;
 }
 #controls {
   display: flex;
@@ -206,10 +206,11 @@ details pre {
 
       <fieldset id="dev_menu" style="display: none;">
         <legend>Dev menu</legend>
-        <label>Mode:
-          <select id="mode-select" name="mode">
-            <option value="check">Check</option>
-            <option value="mhtml">Download MHTML</option>
+        <label>MHTML capture:
+          <select id="mhtml-select" name="mhtml">
+            <option value="omit">Omit</option>
+            <option value="include">Include</option>
+            <option value="sanitized">Sanitized</option>
           </select>
         </label>
         <br>
@@ -344,6 +345,26 @@ details pre {
         const code = document.createElement('code');
         code.textContent = report.url;
         h2.appendChild(code);
+
+        if (report.mhtml) {
+          const mhtmlLink = document.createElement('a');
+          mhtmlLink.textContent = '[mhtml]';
+          const blob = new Blob([report.mhtml], { type: 'application/x-mimearchive' });
+          const url = window.URL.createObjectURL(blob);
+          mhtmlLink.href = url;
+          const date = new Date(report.timestamp);
+          const dateStr = date.toISOString().slice(0,10);
+          const timeStr = date.toTimeString().slice(0,8);
+          mhtmlLink.download = `${new URL(report.url).hostname}_${dateStr}_${timeStr}.mhtml`;
+          //mhtmlLink.style.marginLeft = '0.3em';
+          mhtmlLink.style.color = '#8ad';
+          //mhtmlLink.style.textDecoration = 'none';
+          const mhtmlSpan = document.createElement('span');
+          mhtmlSpan.style.fontSize = '0.5em';
+          mhtmlSpan.appendChild(mhtmlLink);
+          h2.appendChild(mhtmlSpan);
+        }
+        
         card.appendChild(h2);
 
         const datestring = document.createElement('p');
@@ -525,44 +546,17 @@ details pre {
             screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true,
             slowCheck: document.getElementById('slow_check').checked,
             device: document.getElementById('devices-select').value,
-            mode: document.getElementById('mode-select')?.value || 'check'
+            mhtml: document.getElementById('mhtml-select')?.value || 'omit'
           }),
         })
-          .then(async resp => {
-            const mode = document.getElementById('mode-select')?.value
-            if (mode === 'mhtml') {
-              const blob = await resp.blob();
-              const mhtmlUrl = window.URL.createObjectURL(blob);
-
-              // Create hidden download link
-              const a = document.createElement('a');
-              a.style.display = 'none';
-              a.href = mhtmlUrl;
-              a.download = new URL(document.getElementById('url-input').value).hostname + '.mhtml';
-
-              // Add to document, click and cleanup
-              document.body.appendChild(a);
-              a.click();
-
-              // Cleanup after 30s to ensure download starts
-              setTimeout(() => {
-                window.URL.revokeObjectURL(mhtmlUrl);
-                document.body.removeChild(a);
-              }, 30000);
-
-              return null;
-            }
-            const report = await resp.json();
-            return createReportCard(report, url);
-          })
+          .then(resp => resp.json())
+          .then(report => createReportCard(report, url))
           .catch(error => createReportCard({ error, url, timestamp: new Date() }));
 
-        if (response) {
-          if (reportList.children.length > 0) {
-            reportList.insertBefore(response, reportList.children[0]);
-          } else {
-            reportList.appendChild(response);
-          }
+        if (reportList.children.length > 0) {
+          reportList.insertBefore(response, reportList.children[0]);
+        } else {
+          reportList.appendChild(response);
         }
 
         urlInput.disabled = false;

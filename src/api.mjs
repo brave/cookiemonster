@@ -87,7 +87,7 @@ router.post('/check', async (ctx) => {
     location,
     slowCheck,
     device,
-    mode
+    mhtml
   } = ctx.request.body
 
   // Validate device name
@@ -114,16 +114,10 @@ router.post('/check', async (ctx) => {
     location,
     slowCheck,
     device,
-    mode
+    mhtml
   })
-  if (mode === 'mhtml') {
-    ctx.attachment(`${new URL(url).hostname}-${Date.now()}.mhtml`)
-    ctx.body = report
-    ctx.response.type = 'mhtml'
-  } else {
-    ctx.body = JSON.stringify(report)
-    ctx.response.type = 'json'
-  }
+  ctx.body = JSON.stringify(report)
+  ctx.response.type = 'json'
 })
 
 app.use(router.routes())
