@@ -29,6 +29,9 @@ export async function inPageRoutine (randomToken, hostOverride) {
     document.documentElement,
     NodeFilter.SHOW_ELEMENT,
     el => {
+      if (el.tagName === 'BODY') {
+        return NodeFilter.FILTER_SKIP
+      }
       const computedStyle = getComputedStyle(el).position
       return (computedStyle === 'fixed' || computedStyle === 'sticky')
         ? NodeFilter.FILTER_ACCEPT
