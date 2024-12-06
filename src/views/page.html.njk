@@ -206,11 +206,18 @@ details pre {
 
       <fieldset id="dev_menu" style="display: none;">
         <legend>Dev menu</legend>
-        <label>MHTML capture:
-          <select id="mhtml-select" name="mhtml">
-            <option value="omit">Omit</option>
-            <option value="include">Include</option>
-            <option value="minified">Minified</option>
+        <label>MHTML mode:
+          <select id="mhtml-mode-select" name="mhtml-mode">
+            <option value="full">Full</option>
+            <option value="optimized">Optimized</option>
+          </select>
+        </label>
+        <br>
+        <label>Include MHTML:
+          <select id="mhtml-include-select" name="mhtml-include">
+            <option value="never">Never</option>
+            <option value="always">Always</option>
+            <option value="onDetection">On Detection</option>
           </select>
         </label>
         <br>
@@ -546,7 +553,8 @@ details pre {
             screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true,
             slowCheck: document.getElementById('slow_check').checked,
             device: document.getElementById('devices-select').value,
-            mhtml: document.getElementById('mhtml-select')?.value || 'omit'
+            mhtmlMode: document.getElementById('mhtml-mode-select')?.value || 'full',
+            includeMhtml: document.getElementById('mhtml-include-select')?.value || 'never'
           }),
         })
           .then(resp => resp.json())
