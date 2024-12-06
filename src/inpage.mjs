@@ -19,7 +19,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
   }
   */
 
-  const hostAPI = ['getETLDP1', 'classifyInnerText'].reduce((acc, v) => {
+  const hostAPI = ['getETLDP1', 'classifyInnerText', 'extractFrameText'].reduce((acc, v) => {
     acc[v] = (...args) => window[randomToken](v, ...args)
     return acc
   }, {})
@@ -29,6 +29,9 @@ export async function inPageRoutine (randomToken, hostOverride) {
     document.documentElement,
     NodeFilter.SHOW_ELEMENT,
     el => {
+      if (el.tagName === 'BODY') {
+        return NodeFilter.FILTER_SKIP
+      }
       const computedStyle = getComputedStyle(el).position
       return (computedStyle === 'fixed' || computedStyle === 'sticky')
         ? NodeFilter.FILTER_ACCEPT
@@ -106,6 +109,16 @@ export async function inPageRoutine (randomToken, hostOverride) {
   const contentCheckedElements = await asyncFilter(uncontainedElements, async node => {
     const innerText = node.innerText
     if (innerText.trim() === '') {
+      // some sites dump their cookie notices into iframes
+      const iframes = node.querySelectorAll('iframe')
+      for (const iframe of iframes) {
+        const innerText = await hostAPI.extractFrameText(iframe)
+        const { classifier, classification } = await hostAPI.classifyInnerText(innerText)
+        classifiersUsed.add(classifier)
+        if (classification) {
+          return true
+        }
+      }
       return false
     }
     const { classifier, classification } = await hostAPI.classifyInnerText(node.innerText)
