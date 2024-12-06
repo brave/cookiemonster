@@ -562,9 +562,9 @@ details pre {
           .catch(error => createReportCard({ error, url, timestamp: new Date() }));
 
         if (reportList.children.length > 0) {
-          reportList.insertBefore(response, reportList.children[0]);
+          reportList.insertBefore(newCard, reportList.children[0]);
         } else {
-          reportList.appendChild(response);
+          reportList.appendChild(newCard);
         }
 
         urlInput.disabled = false;
