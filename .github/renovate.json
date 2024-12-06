@@ -7,6 +7,13 @@
     {
       "matchUpdateTypes": ["major"],
       "enabled": true
+    },
+    {
+      "groupName": "puppeteer",
+      "matchPackageNames": [
+        "puppeteer-core",
+        "rebrowser-patches"
+      ]
     }
   ],
   "ignorePaths": [
