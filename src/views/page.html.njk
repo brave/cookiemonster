@@ -540,7 +540,7 @@ details pre {
                 acc[checkbox.id] = checkbox.checked;
                 return acc;
             }, {});
-        const response = await fetch('/check', {
+        const newCard = await fetch('/check', {
           method: 'POST',
           cache: 'no-cache',
           headers: {
