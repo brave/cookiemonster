@@ -58,6 +58,9 @@ const keywordClassifierFallback = (innerText) => {
 }
 
 const inPageAPI = {
+  extractFrameText: (iframeHandle) => {
+    return iframeHandle.contentFrame().then(frameDoc => frameDoc.evaluate(() => document.documentElement.innerText))
+  },
   classifyInnerText: (innerText) => {
     let innerTextSnippet = innerText.slice(0, MAX_LENGTH)
     let ifTruncated = ''
