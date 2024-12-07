@@ -35,7 +35,7 @@ pre,code {
   padding: 0.5em;
 }
 code {
-  padding: 0.2em 1em;
+  padding: 0.2em 0.5em;
 }
 #controls {
   display: flex;
@@ -137,6 +137,28 @@ details pre {
 #devices-select {
   width: 15em; /* Shortens the width of the devices-select dropdown */
 }
+
+.version {
+  color: #888;
+  margin-left: 1em;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+.toast-message {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  display: none;
+  z-index: 1000;
+}
 .warning-icon {
   background: hsl(45deg 100% 85%);
   color: hsl(45deg 100% 20%);
@@ -181,13 +203,73 @@ details pre {
           <option value="">default</option>
         </select>
       </fieldset>
+
+      <fieldset id="dev_menu" style="display: none;">
+        <legend>Dev menu</legend>
+        <label>MHTML mode:
+          <select id="mhtml-mode-select" name="mhtml-mode">
+            <option value="full">Full</option>
+            <option value="optimized">Optimized</option>
+          </select>
+        </label>
+        <br>
+        <label>Include MHTML:
+          <select id="mhtml-include-select" name="mhtml-include">
+            <option value="never">Never</option>
+            <option value="always">Always</option>
+            <option value="onDetection">On Detection</option>
+          </select>
+        </label>
+        <br>
+      </fieldset>
       </div>
     </form>
     <div id="spinner">🍪</div>
     <div id="reportlist"></div>
     <footer>
       <a href="https://github.com/brave/cookiemonster">Source code</a>
+      <span class="version">{{ version }}</span>
+      <div class="toast-message"></div>
     </footer>
+    <script>
+      const version = document.querySelector('.version');
+      const toast = document.querySelector('.toast-message');
+      const devMenu = document.getElementById('dev_menu');
+      let clicks = 0;
+      let clickTimer;
+      const REQUIRED_CLICKS = 7;
+
+      if (localStorage.getItem('devModeEnabled') === 'true') {
+        devMenu.style.display = 'block';
+      }
+
+      function showToast(message, duration = 2000) {
+        toast.textContent = message;
+        toast.style.display = 'block';
+        setTimeout(() => {
+          toast.style.display = 'none';
+        }, duration);
+      }
+
+      version.addEventListener('click', (e) => {
+        clicks++;
+
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => {
+          clicks = 0;
+        }, 2000);
+
+        if (clicks === REQUIRED_CLICKS) {
+          devMenu.style.display = 'block';
+          localStorage.setItem('devModeEnabled', 'true');
+          showToast('Dev mode enabled', 3000);
+          clicks = 0;
+        } else if (clicks > 2) {
+          const remaining = REQUIRED_CLICKS - clicks;
+          showToast(`You are now ${remaining} ${remaining === 1 ? 'step' : 'steps'} away from being a developer`);
+        }
+      });
+    </script>
     <script type="module">
       function toggleAllLists(checked) {
           const checkboxes = document.querySelectorAll('#adblock-lists input[type="checkbox"]:not(#toggle-all-lists)');
@@ -270,6 +352,26 @@ details pre {
         const code = document.createElement('code');
         code.textContent = report.url;
         h2.appendChild(code);
+
+        if (report.mhtml) {
+          const mhtmlLink = document.createElement('a');
+          mhtmlLink.textContent = '[mhtml]';
+          const blob = new Blob([report.mhtml], { type: 'application/x-mimearchive' });
+          const url = window.URL.createObjectURL(blob);
+          mhtmlLink.href = url;
+          const date = new Date(report.timestamp);
+          const dateStr = date.toISOString().slice(0,10);
+          const timeStr = date.toTimeString().slice(0,8);
+          mhtmlLink.download = `${new URL(report.url).hostname}_${dateStr}_${timeStr}.mhtml`;
+          //mhtmlLink.style.marginLeft = '0.3em';
+          mhtmlLink.style.color = '#8ad';
+          //mhtmlLink.style.textDecoration = 'none';
+          const mhtmlSpan = document.createElement('span');
+          mhtmlSpan.style.fontSize = '0.5em';
+          mhtmlSpan.appendChild(mhtmlLink);
+          h2.appendChild(mhtmlSpan);
+        }
+        
         card.appendChild(h2);
 
         const datestring = document.createElement('p');
@@ -450,7 +552,9 @@ details pre {
             location: locationSelector.value,
             screenshot: document.getElementById('full_page_screenshot').checked ? "fullPage" : true,
             slowCheck: document.getElementById('slow_check').checked,
-            device: document.getElementById('devices-select').value
+            device: document.getElementById('devices-select').value,
+            mhtmlMode: document.getElementById('mhtml-mode-select')?.value || 'full',
+            includeMhtml: document.getElementById('mhtml-include-select')?.value || 'never'
           }),
         })
           .then(resp => resp.json())
@@ -462,6 +566,7 @@ details pre {
         } else {
           reportList.appendChild(newCard);
         }
+
         urlInput.disabled = false;
         locationSelector.disabled = false;
         for (const checkbox of document.querySelectorAll('input[type="checkbox"]')) {

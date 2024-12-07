@@ -151,6 +151,8 @@ export const checkPage = async (args) => {
   const slowCheck = args.slowCheck ?? false
   const blockNonHttpRequests = args.blockNonHttpRequests ?? true
   const deviceName = args.device
+  const mhtmlMode = args.mhtmlMode ?? 'full'
+  const includeMhtml = args.includeMhtml ?? 'never'
 
   const report = {
     url,
@@ -240,11 +242,32 @@ export const checkPage = async (args) => {
     await setTimeout(waitTimeMs)
 
     const randomToken = generateRandomToken()
-
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
     const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
+
     try {
       const l = await inPageResult.evaluate(r => r.elements.length)
+      const elementDetected = l === 1
+
+      // Capture MHTML if requested
+      if (includeMhtml === 'always' || (includeMhtml === 'onDetection' && elementDetected)) {
+        const session = await page.target().createCDPSession()
+        try {
+          // Limited to 256MB
+          // https://source.chromium.org/chromium/chromium/src/+/main:content/browser/devtools/devtools_http_handler.cc;l=97?q=kSendBufferSizeForDevTools&ss=chromium
+          const mhtmlData = await session.send('Page.captureSnapshot', { format: 'mhtml' })
+
+          if (mhtmlMode === 'optimized') {
+            // TODO: Implement optimization logic here
+            console.warn('MHTML optimization not yet implemented')
+          }
+
+          report.mhtml = mhtmlData.data
+        } finally {
+          await session.detach()
+        }
+      }
+
       if (l > 1) {
         throw new Error('Too many candidate elements detected (' + l + ')')
       }

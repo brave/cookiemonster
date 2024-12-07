@@ -57,6 +57,7 @@ jobs:
           build-args: |
             FULL_CACHEBUST=${{ steps.vars.outputs.FULL_CACHEBUST }}
             SETUP_CACHEBUST=${{ steps.vars.outputs.SETUP_CACHEBUST }}
+            GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max,compression=zstd
           outputs: type=image,oci-mediatypes=true,compression=zstd,compression-level=3,force-compression=true,push=true
