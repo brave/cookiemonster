@@ -60,7 +60,7 @@ docker compose --profile ollama up brave_ollama
 
 3. With LLM support via AWS Bedrock:
 ```bash
-aws-vault exec cookiemonster-bedrock-dev -- docker compose --profile litellm up
+aws-vault exec cookiemonster-bedrock -- docker compose --profile litellm up
 ```
 
 > [!NOTE]
