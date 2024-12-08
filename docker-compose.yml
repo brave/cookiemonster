@@ -27,7 +27,7 @@ services:
       - litellm
 
   litellm:
-    image: ghcr.io/berriai/litellm:main-v1.53.9
+    image: ghcr.io/berriai/litellm:main-v1.52.0-stable
     profiles:
       - litellm
     restart: unless-stopped
@@ -54,6 +54,8 @@ services:
     profiles:
       - litellm
     restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: litellm
       POSTGRES_USER: llmproxy
@@ -94,3 +96,4 @@ services:
 
 volumes:
   ollama_data:
+  postgres_data:
