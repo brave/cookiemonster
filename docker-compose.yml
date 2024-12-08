@@ -46,7 +46,8 @@ services:
       - STORE_MODEL_IN_DB=False
       - LITELLM_MASTER_KEY=sk-litellm
     depends_on:
-      - litellm_db
+      litellm_db:
+        condition: service_healthy
 
   litellm_db:
     image: postgres
