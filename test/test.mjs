@@ -27,7 +27,7 @@ const CONCURRENCY = Math.max(1, Math.floor(cpus().length / 2))
 console.log(`Running tests with concurrency: ${CONCURRENCY}`)
 
 async function testPage (testCasePath, expectedHash) {
-  const url = pathToFileURL(path.join(import.meta.dirname, 'data', testCasePath, 'index.html')).href
+  const url = pathToFileURL(path.join(import.meta.dirname, 'data', testCasePath, 'index.mhtml')).href
   const r = await checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args })
 
   if (r.error) {
