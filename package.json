@@ -10,7 +10,7 @@
     "setup": "node src/setup.mjs",
     "serve": "node --import ./src/instrument.mjs src/api.mjs",
     "rebrowser-patches": "rebrowser-patches patch --packageName puppeteer-core",
-    "test": "node test/test.mjs",
+    "test": "node --test test/test.mjs",
     "lint": "standard",
     "lint-fix": "standard --fix"
   },
