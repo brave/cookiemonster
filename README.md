@@ -58,7 +58,15 @@ docker compose up brave
 docker compose --profile ollama up brave_ollama
 ```
 
-For both setups, visit `localhost:3000` in your browser.
+3. With LLM support via AWS Bedrock:
+```bash
+aws-vault exec cookiemonster-bedrock-dev -- docker compose --profile litellm up
+```
+
+> [!NOTE]
+> You will need to set up the AWS profile in your environment.
+
+For all setups, visit `localhost:3000` in your browser.
 
 ## Using as a library
 

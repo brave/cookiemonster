@@ -15,6 +15,54 @@ services:
     <<: *brave_base
     profiles: [""]
 
+  brave_litellm:
+    <<: *brave_base
+    environment:
+      - OPENAI_BASE_URL=http://litellm:4000
+      - OPENAI_API_KEY=sk-litellm
+      - OPENAI_MODEL=meta.llama3-8b-instruct-v1:0
+    profiles:
+      - litellm
+    depends_on:
+      - litellm
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-v1.53.9
+    profiles:
+      - litellm
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    command:
+      - "--config=/app/config.yaml"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - DATABASE_URL=postgresql://llmproxy:llmproxy@litellm_db:5432/litellm
+      - STORE_MODEL_IN_DB=False
+      - LITELLM_MASTER_KEY=sk-litellm
+    depends_on:
+      - litellm_db
+
+  litellm_db:
+    image: postgres
+    profiles:
+      - litellm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: llmproxy
+      POSTGRES_PASSWORD: llmproxy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d litellm -U llmproxy"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+
   brave_ollama:
     <<: *brave_base
     environment:

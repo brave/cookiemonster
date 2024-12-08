@@ -1,0 +1,23 @@
+model_list:
+  - model_name: meta.llama3-8b-instruct-v1:0
+    litellm_params:
+      model: bedrock/meta.llama3-8b-instruct-v1:0
+      drop_params: true # drop unsupported params (e.g. seed)
+
+  - model_name: meta.llama3-2-11b-instruct-v1:0
+    litellm_params:
+      model: bedrock/meta.llama3-2-11b-instruct-v1:0
+      drop_params: true # drop unsupported params (e.g. seed)
+
+  - model_name: meta.llama3-2-90b-instruct-v1:0
+    litellm_params:
+      model: bedrock/meta.llama3-2-90b-instruct-v1:0
+      drop_params: true # drop unsupported params (e.g. seed)
+
+  - model_name: anthropic.claude-3-5-sonnet-20241022-v2:0
+    litellm_params:
+      model: bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0
+
+  - model_name: anthropic.claude-3-haiku-20240307-v1:0
+    litellm_params:
+      model: bedrock/anthropic.claude-3-haiku-20240307-v1:0
