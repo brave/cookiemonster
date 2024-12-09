@@ -11,7 +11,7 @@
     "serve": "node --import ./src/instrument.mjs src/api.mjs",
     "rebrowser-patches": "rebrowser-patches patch --packageName puppeteer-core",
     "test": "node --test test/test.mjs",
-    "test:ci": "node --test --test-reporter=@reporters/github --test-reporter-destination=stdout test/test.mjs",
+    "test:ci": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=@reporters/github --test-reporter-destination=stdout test/test.mjs",
     "lint": "standard",
     "lint-fix": "standard --fix"
   },
