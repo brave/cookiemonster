@@ -1,12 +1,19 @@
 import { pathToFileURL } from 'url'
 import { createHash } from 'crypto'
 import path from 'path'
+import { before, describe, it } from 'node:test'
+import { cpus } from 'os'
+import assert from 'node:assert'
 
 import { checkPage, prepareProfile } from '../src/lib.mjs'
 
+// Get browser path from environment variables with fallbacks
+const browserPath = process.env.BRAVE_BINARY || '/usr/bin/brave'
+console.log('Using browser executable:', browserPath)
+
 const args = {
   seconds: 0,
-  executablePath: process.argv[2] || '/usr/bin/brave',
+  executablePath: browserPath,
   adblockLists: {
     eaokkjgnlhceblfhbhpeoebmfldocmnc: false,
     adcocjohghhfpidemphmcmlmhnfgikei: false,
@@ -15,27 +22,25 @@ const args = {
   }
 }
 
+// Calculate concurrency based on available CPU cores
+const CONCURRENCY = Math.max(1, Math.floor(cpus().length / 2))
+console.log(`Running tests with concurrency: ${CONCURRENCY}`)
+
 async function testPage (testCasePath, expectedHash) {
-  const url = pathToFileURL(path.join(import.meta.dirname, 'data', testCasePath, 'index.html')).href
-  return checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args }).then(r => {
-    if (r.error) {
-      console.log('[' + testCasePath + '] ERROR: ' + r.error)
-      return false
-    }
+  const url = pathToFileURL(path.join(import.meta.dirname, 'data', testCasePath, 'index.mhtml')).href
+  const r = await checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args })
 
-    let markupHash
-    if (r.identified) {
-      markupHash = createHash('sha256').update(r.markup).digest('base64')
-    }
+  if (r.error) {
+    throw new Error(`[${testCasePath}] ERROR: ${r.error}`)
+  }
 
-    if (expectedHash !== markupHash) {
-      console.log('[' + testCasePath + '] expected hash "' + expectedHash + '" did not match markup "' + markupHash + '"')
-      return false
-    } else {
-      console.log('[' + testCasePath + '] success')
-      return true
-    }
-  })
+  let markupHash
+  if (r.identified) {
+    markupHash = createHash('sha256').update(r.markup).digest('base64')
+  }
+
+  assert.strictEqual(markupHash, expectedHash,
+    `[${testCasePath}] expected hash "${expectedHash}" did not match markup "${markupHash}"`)
 }
 
 const testCases = [
@@ -101,25 +106,19 @@ const testCases = [
   ['zora.co', 'ZQGVsHwN2dm4XfAmUeYQeV2b0eJxM45CFdQtDyeVjU0=']
 ]
 
-const failures = []
+describe('Cookie consent tests', { concurrency: CONCURRENCY }, () => {
+  // Setup profile once before all tests
+  before(async () => {
+    await prepareProfile(args)
+  })
 
-await prepareProfile(args)
-for (const testExpectation of testCases) {
-  const testPassed = await testPage(...testExpectation)
-  if (!testPassed) {
-    failures.push(testExpectation[0])
+  for (const [testCasePath, expectedHash] of testCases) {
+    const testName = expectedHash === undefined
+      ? `should not detect notice on ${testCasePath}`
+      : `should detect notice on ${testCasePath}`
+
+    it(testName, async () => {
+      await testPage(testCasePath, expectedHash)
+    })
   }
-}
-
-console.log('\n')
-
-if (failures.length === 0) {
-  console.log('All test cases passed.')
-} else {
-  console.log(`${testCases.length - failures.length} out of ${testCases.length} tests passed.`)
-  console.log('Failures:')
-  for (const failure of failures) {
-    console.log(`  ${failure}`)
-  }
-  process.exit(-1)
-}
+})
