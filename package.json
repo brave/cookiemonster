@@ -21,6 +21,7 @@
     "@koa/router": "^13.0.0",
     "@sentry/node": "^8.26.0",
     "koa": "^2.15.3",
+    "koa-compress": "^5.1.1",
     "nunjucks": "^3.2.4",
     "openai": "^4.73.0",
     "proxy-chain": "^2.5.3",
