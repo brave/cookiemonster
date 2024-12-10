@@ -424,6 +424,13 @@ details pre {
             card.appendChild(details);
           }
         }
+
+        if (report.scrollBlocked === true) {
+          const p = document.createElement('p');
+          p.textContent = 'Scrolling may be prevented on this page.';
+          card.appendChild(p);
+        }
+
         if (report.screenshot !== undefined) {
           const img = document.createElement('img');
           img.src = 'data:image/webp;base64,' + report.screenshot;
