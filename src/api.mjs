@@ -8,6 +8,7 @@ import process from 'process'
 import './instrument.mjs'
 import Koa from 'koa'
 import { bodyParser } from '@koa/bodyparser'
+import compress from 'koa-compress'
 import * as Sentry from '@sentry/node'
 import Router from '@koa/router'
 import nunjucks from 'nunjucks'
@@ -29,6 +30,7 @@ console.log(`Port: ${port}`)
 
 const app = new Koa()
 app.use(bodyParser())
+app.use(compress())
 
 Sentry.setupKoaErrorHandler(app)
 
