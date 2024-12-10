@@ -3,7 +3,6 @@ import { createHash } from 'crypto'
 import path from 'path'
 import { before, describe, it } from 'node:test'
 import { cpus } from 'os'
-import assert from 'node:assert'
 
 import { checkPage, prepareProfile } from '../src/lib.mjs'
 
@@ -38,17 +37,24 @@ async function testPage (t, testCasePath, expectedHash, expectedScrollBlocking) 
     markupHash = createHash('sha256').update(r.markup).digest('base64')
   }
 
-  t.assert.strictEqual(markupHash, expectedHash,
-    `[${testCasePath}] expected hash "${expectedHash}" did not match markup "${markupHash}"`)
+  const cookieNoticeTestName = expectedHash === undefined
+    ? 'should not detect notice'
+    : 'should detect notice'
 
-  if (expectedScrollBlocking === undefined) {
-    // once more scroll blocking testcases have been gathered, it should
-    // be possible to improve the heuristics and remove the warnings
-    t.diagnostic('scroll blocking test ignored')
-  } else {
-    assert.strictEqual(r.scrollBlocked, expectedScrollBlocking,
-      `expected scroll blocking result [${expectedScrollBlocking}] did not match detected result [${r.scrollBlocked}]`)
-  }
+  await t.test(cookieNoticeTestName, async (t) => {
+    t.assert.strictEqual(markupHash, expectedHash,
+      `expected hash "${expectedHash}" did not match markup "${markupHash}"`)
+  })
+
+  await t.test('scroll blocking detection', async (t) => {
+    if (expectedScrollBlocking === undefined) {
+      // t.diagnostic('scroll blocking test ignored')
+      t.todo('scroll blocking test ignored')
+    } else {
+      t.assert.strictEqual(r.scrollBlocked, expectedScrollBlocking,
+        `expected scroll blocking result [${expectedScrollBlocking}] did not match detected result [${r.scrollBlocked}]`)
+    }
+  })
 }
 
 const testCases = [
@@ -125,13 +131,9 @@ describe('Cookie consent tests', { concurrency: CONCURRENCY }, () => {
     await prepareProfile(args)
   })
 
-  for (const [testCasePath, expectedHash] of testCases) {
-    const testName = expectedHash === undefined
-      ? `should not detect notice on ${testCasePath}`
-      : `should detect notice on ${testCasePath}`
-
-    it(testName, async (t) => {
-      await testPage(t, testCasePath, expectedHash)
+  for (const [testCasePath, expectedHash, expectedScrollBlocking] of testCases) {
+    it(testCasePath, async (t) => {
+      await testPage(t, testCasePath, expectedHash, expectedScrollBlocking)
     })
   }
 })
