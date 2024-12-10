@@ -111,5 +111,6 @@ jobs:
         OPENAI_API_KEY: bedrock
         OPENAI_BASE_URL: http://localhost:11434/api/v1
         OPENAI_MODEL: ${{ env.BEDROCK_MODEL }}
+        BRAVE_BINARY: /usr/bin/brave-browser
       run: |
-        npm run test -- /usr/bin/brave-browser
+        npm run test:ci
