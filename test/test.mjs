@@ -1,12 +1,18 @@
 import { pathToFileURL } from 'url'
 import { createHash } from 'crypto'
 import path from 'path'
+import { before, describe, it } from 'node:test'
+import { cpus } from 'os'
 
 import { checkPage, prepareProfile } from '../src/lib.mjs'
 
+// Get browser path from environment variables with fallbacks
+const browserPath = process.env.BRAVE_BINARY || '/usr/bin/brave'
+console.log('Using browser executable:', browserPath)
+
 const args = {
   seconds: 0,
-  executablePath: process.argv[2] || '/usr/bin/brave',
+  executablePath: browserPath,
   adblockLists: {
     eaokkjgnlhceblfhbhpeoebmfldocmnc: false,
     adcocjohghhfpidemphmcmlmhnfgikei: false,
@@ -14,46 +20,39 @@ const args = {
     bfpgedeaaibpoidldhjcknekahbikncb: false
   }
 }
+// Calculate concurrency based on available CPU cores
+const CONCURRENCY = Math.max(1, Math.floor(cpus().length / 2))
+console.log(`Running tests with concurrency: ${CONCURRENCY}`)
 
-async function testPage (testCasePath, expectedHash, expectedScrollBlocking) {
+async function testPage (t, testCasePath, expectedHash, expectedScrollBlocking) {
   const url = pathToFileURL(path.join(import.meta.dirname, 'data', testCasePath, 'index.html')).href
-  return checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args }).then(r => {
-    if (r.error) {
-      console.log('[' + testCasePath + '] ERROR: ' + r.error)
-      return false
-    }
+  const r = await checkPage({ url, hostOverride: testCasePath, blockNonHttpRequests: false, ...args })
 
-    const failures = []
-    const warnings = []
+  if (r.error) {
+    throw new Error(`[${testCasePath}] ERROR: ${r.error}`)
+  }
 
-    let markupHash
-    if (r.identified) {
-      markupHash = createHash('sha256').update(r.markup).digest('base64')
-    }
+  let markupHash
+  if (r.identified) {
+    markupHash = createHash('sha256').update(r.markup).digest('base64')
+  }
 
-    if (expectedHash !== markupHash) {
-      failures.push('expected cookie notice hash "' + expectedHash + '" did not match detected markup "' + markupHash + '"')
-    }
+  const cookieNoticeTestName = expectedHash === undefined
+    ? 'should not detect notice'
+    : 'should detect notice'
 
+  await t.test(cookieNoticeTestName, async (t) => {
+    t.assert.strictEqual(markupHash, expectedHash,
+      `expected hash "${expectedHash}" did not match markup "${markupHash}"`)
+  })
+
+  await t.test('scroll blocking detection', async (t) => {
     if (expectedScrollBlocking === undefined) {
-      // once more scroll blocking testcases have been gathered, it should
-      // be possible to improve the heuristics and remove the warnings
-      warnings.push('scroll blocking test ignored')
-    } else if (expectedScrollBlocking !== r.scrollBlocked) {
-      failures.push(`expected scroll blocking result [${expectedScrollBlocking}] did not match detected result [${r.scrollBlocked}]`)
+      t.todo('scroll blocking test ignored')
+    } else {
+      t.assert.strictEqual(r.scrollBlocked, expectedScrollBlocking,
+        `expected scroll blocking result [${expectedScrollBlocking}] did not match detected result [${r.scrollBlocked}]`)
     }
-
-    const success = failures.length === 0
-    const testStatus = success ? 'success' : 'failure'
-    console.log(`[${testCasePath}] ${testStatus}`)
-    for (const failure of failures) {
-      console.log(` - ${failure}`)
-    }
-    for (const warning of warnings) {
-      console.log(` - ${warning}`)
-    }
-
-    return failures.length === 0
   })
 }
 
@@ -125,25 +124,15 @@ const testCases = [
   ['zora.co', 'ZQGVsHwN2dm4XfAmUeYQeV2b0eJxM45CFdQtDyeVjU0=', false]
 ]
 
-const failures = []
+describe('Cookie consent tests', { concurrency: CONCURRENCY }, () => {
+  // Setup profile once before all tests
+  before(async () => {
+    await prepareProfile(args)
+  })
 
-await prepareProfile(args)
-for (const testExpectation of testCases) {
-  const testPassed = await testPage(...testExpectation)
-  if (!testPassed) {
-    failures.push(testExpectation[0])
+  for (const [testCasePath, expectedHash, expectedScrollBlocking] of testCases) {
+    it(testCasePath, async (t) => {
+      await testPage(t, testCasePath, expectedHash, expectedScrollBlocking)
+    })
   }
-}
-
-console.log('\n')
-
-if (failures.length === 0) {
-  console.log('All test cases passed.')
-} else {
-  console.log(`${testCases.length - failures.length} out of ${testCases.length} tests passed.`)
-  console.log('Failures:')
-  for (const failure of failures) {
-    console.log(`  ${failure}`)
-  }
-  process.exit(-1)
-}
+})
