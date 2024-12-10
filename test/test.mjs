@@ -48,7 +48,6 @@ async function testPage (t, testCasePath, expectedHash, expectedScrollBlocking) 
 
   await t.test('scroll blocking detection', async (t) => {
     if (expectedScrollBlocking === undefined) {
-      // t.diagnostic('scroll blocking test ignored')
       t.todo('scroll blocking test ignored')
     } else {
       t.assert.strictEqual(r.scrollBlocked, expectedScrollBlocking,
