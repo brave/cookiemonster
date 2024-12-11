@@ -4,6 +4,7 @@ import fs from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 import process from 'process'
+import os from 'os'
 
 import './instrument.mjs'
 import Koa from 'koa'
@@ -12,9 +13,18 @@ import compress from 'koa-compress'
 import * as Sentry from '@sentry/node'
 import Router from '@koa/router'
 import nunjucks from 'nunjucks'
+import { Semaphore, withTimeout } from 'async-mutex'
 
 import { checkPage } from './lib.mjs'
 import { getFilteredKnownDevices } from './util.mjs'
+
+// Calculate default max concurrency based on available memory
+const totalMemoryMB = os.totalmem() / (1024 * 1024)
+const DEFAULT_MAX_CONCURRENCY = Math.floor(totalMemoryMB / 256)
+
+const maxConcurrency = parseInt(process.env.MAX_CONCURRENCY) || DEFAULT_MAX_CONCURRENCY
+const maxConcurrencyWaitMs = parseInt(process.env.MAX_CONCURRENCY_WAIT_MS) || 2000
+const semaphore = withTimeout(new Semaphore(maxConcurrency), maxConcurrencyWaitMs)
 
 const browserBinaryPath = process.argv[2] || '/usr/bin/brave'
 const port = process.argv[3] || 3000
@@ -107,21 +117,33 @@ router.post('/check', async (ctx) => {
     return
   }
 
-  const report = await checkPage({
-    url,
-    seconds: seconds || 4,
-    executablePath: browserBinaryPath,
-    adblockLists,
-    // debugLevel: 'verbose',
-    screenshot,
-    location,
-    slowCheck,
-    device,
-    mhtmlMode,
-    includeMhtml
-  })
-  ctx.body = JSON.stringify(report)
-  ctx.response.type = 'json'
+  try {
+    const report = await semaphore.runExclusive(async () => {
+      return await checkPage({
+        url,
+        seconds: seconds || 4,
+        executablePath: browserBinaryPath,
+        adblockLists,
+        // debugLevel: 'verbose',
+        screenshot,
+        location,
+        slowCheck,
+        device,
+        mhtmlMode,
+        includeMhtml
+      })
+    })
+
+    ctx.body = JSON.stringify(report)
+    ctx.response.type = 'json'
+  } catch (error) {
+    if (error.message === 'timeout') {
+      ctx.status = 429
+      ctx.body = { error: 'Too Many Requests: server is at capacity' }
+      return
+    }
+    throw error
+  }
 })
 
 app.use(router.routes())
