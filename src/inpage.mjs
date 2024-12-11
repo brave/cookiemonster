@@ -114,7 +114,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
       for (const iframe of iframes) {
         const innerText = await hostAPI.extractFrameText(iframe)
         if (innerText.trim() === '') {
-          continue;
+          continue
         }
         const { classifier, classification } = await hostAPI.classifyInnerText(innerText)
         classifiersUsed.add(classifier)
