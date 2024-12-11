@@ -21,6 +21,7 @@ jobs:
   build:
     environment:
       name: ci
+    timeout-minutes: 10
     #services:
     #  ollama:
     #    image: ollama/ollama:latest
