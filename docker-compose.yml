@@ -7,6 +7,8 @@ x-brave-base: &brave_base
   volumes:
     - .:/app
   env_file: .env
+  environment:
+    - DEV=true
   ports:
     - "3000:3000"
 

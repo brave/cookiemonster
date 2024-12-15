@@ -21,8 +21,9 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import { KnownDevices } from 'puppeteer-core'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
-import { inPageRoutine } from './inpage.mjs'
 import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered } from './util.mjs'
+import { runExtractors } from './extractors/index.mjs'
+import { runClassifiers } from './classifiers/index.mjs'
 
 // Generate a random string between [a000000000, zzzzzzzzzz] (base 36)
 const generateRandomToken = () => {
@@ -31,90 +32,14 @@ const generateRandomToken = () => {
   return Math.floor(Math.random() * (max - min) + min).toString(36)
 }
 
-const openai = new OpenAI({
+const openaiClient = new OpenAI({
   baseURL: process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1',
   apiKey: process.env.OPENAI_API_KEY || 'ollama'
 })
 
-const MAX_LENGTH = 500
-
-const keywordClassifierFallback = (innerText) => {
-  const keywords = [
-    'cookies',
-    'consent',
-    'privacy',
-    'analytics',
-    'accept',
-    'only necessary',
-    'reject'
-  ]
-  const lower = innerText.toLowerCase()
-  for (const keyword of keywords) {
-    if (lower.includes(keyword)) {
-      return true
-    }
-  }
-  return false
-}
-
 const inPageAPI = {
   extractFrameText: (iframeHandle) => {
     return iframeHandle.contentFrame().then(frameDoc => frameDoc.evaluate(() => document.documentElement.innerText))
-  },
-  classifyInnerText: (innerText) => {
-    let innerTextSnippet = innerText.slice(0, MAX_LENGTH)
-    let ifTruncated = ''
-    if (innerTextSnippet.length !== innerText.length) {
-      innerTextSnippet += '...'
-      ifTruncated = `the first ${MAX_LENGTH} characters of `
-    }
-    const systemPrompt = `Your task is to classify text from the innerText property of HTML overlay elements.
-
-An overlay element is considered to be a "cookie consent notice" if it meets all of these criteria:
-1. it explicitly notifies the user of the site's use of cookies or other storage technology, such as: "We use cookies...", "This site uses...", etc.
-2. it offers the user choices for the usage of cookies on the site, such as: "Accept", "Reject", "Learn More", etc., or informs the user that their use of the site means they accept the usage of cookies.
-
-Note: This definition does not include adult content notices or any other type of notice that is primarily focused on age verification or content restrictions. Cookie consent notices are specifically intended to inform users about the website's use of cookies and obtain their consent for such use.
-
-Note: A cookie consent notice should specifically relate to the site's use of cookies or other storage technology that stores data on the user's device, such as HTTP cookies, local storage, or session storage. Requests for permission to access geolocation information, camera, microphone, etc., do not fall under this category.
-
-Note: Do NOT classify a website header or footer as a "cookie consent notice". Website headers or footers may contain a list of links, possibly including a privacy policy, cookie policy, or terms of service document, but their primary purpose is navigational rather than informational.
-`
-    const prompt = `
-The following text was captured from ${ifTruncated}the innerText of an HTML overlay element:
-
-\`\`\`
-${innerTextSnippet}
-\`\`\`
-
-Is the overlay element above considered to be a "cookie consent notice"? Provide your answer as a boolean.
-`
-    return openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'llama3',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      // We only need enough tokens for "true" or "false"
-      max_tokens: 2,
-      // Fixed seed and zero temperature to avoid randomized responses
-      seed: 1,
-      temperature: 0,
-      // Only consider the single most likely next token
-      top_p: 0
-    }).then(response => {
-      const answer = response.choices[0].message.content
-      return {
-        classifier: 'llm',
-        classification: answer.match(/true/i)
-      }
-    }).catch(e => {
-      console.error('LLM classification failed:', e)
-      return {
-        classifier: 'keyword',
-        classification: keywordClassifierFallback(innerText)
-      }
-    })
   },
   getETLDP1: (() => {
     let init
@@ -144,6 +69,8 @@ const shouldBlockRequest = (request) => {
 
   return false
 }
+
+const MAX_CANDIDATE_ELEMENTS = 20
 
 export const checkPage = async (args) => {
   const url = args.url
@@ -243,14 +170,70 @@ export const checkPage = async (args) => {
 
     const randomToken = generateRandomToken()
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
-    const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
-
+    let candidateElementsHandle, extractor, candidateElementsCount
     try {
-      const l = await inPageResult.evaluate(r => r.elements.length)
-      const elementDetected = l === 1
+      ({ candidateElementsHandle, extractor, candidateElementsCount } = await runExtractors(page, {
+        randomToken,
+        hostOverride: args.hostOverride
+      }))
 
-      // Capture MHTML if requested
-      if (includeMhtml === 'always' || (includeMhtml === 'onDetection' && elementDetected)) {
+      if (candidateElementsCount > MAX_CANDIDATE_ELEMENTS) {
+        throw new Error(`Too many candidate elements (${candidateElementsCount}) using ${extractor} extractor. Maximum is ${MAX_CANDIDATE_ELEMENTS}`)
+      }
+
+      const enabledClassifiers = ['llm', 'keyword'] // TODO: Add to API
+
+      let foundMatch = false
+      // TODO: This currently evaluates all candidate elements in order to throw an error if too many are detected, consider adding an option to only evaluate until the first match is found
+      for (let i = 0; i < candidateElementsCount; i++) {
+        const elementHandle = await candidateElementsHandle.evaluateHandle((r, idx) => r[idx], i)
+        try {
+          const element = await elementHandle.evaluate(el => ({
+            innerText: el.innerText,
+            outerHTML: el.outerHTML
+          }))
+
+          const classifierResults = await runClassifiers(page, element, { openai: openaiClient }, enabledClassifiers)
+          const isMatch = Object.values(classifierResults).some(result => result)
+          if (isMatch) {
+            if (foundMatch) {
+              // multiple matches found, throw an error
+              throw new Error(`
+                Multiple matches found, extractor: ${extractor}, enabledClassifiers: ${enabledClassifiers.sort().join(', ')}
+                previous classifierResults: ${JSON.stringify(report.classifierResults)}
+                current classifierResults: ${JSON.stringify(classifierResults)}
+                candidateElements: ${candidateElementsCount}
+                ${/* previous markup: ${report.markup} */ ''}
+                ${/* current markup: ${element.outerHTML} */ ''}
+              `)
+            }
+            foundMatch = true
+
+            report.identified = true
+            report.extractor = extractor
+            report.classifierResults = classifierResults
+
+            const boundingBox = await elementHandle.boundingBox()
+            if (boundingBox.height === 0 || boundingBox.width === 0) {
+              // it won't work for a screenshot. Find another element to capture, somehow
+            } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
+              const screenshotB64 = await elementHandle.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
+              report.screenshot = screenshotB64
+            }
+
+            report.markup = String(await unified()
+              .use(rehypeParse, { fragment: true })
+              .use(rehypeFormat)
+              .use(rehypeStringify)
+              .process(element.outerHTML)).trim()
+          }
+        } finally {
+          await elementHandle.dispose()
+        }
+      }
+
+      // MHTML export
+      if (includeMhtml === 'always' || (includeMhtml === 'onDetection' && foundMatch)) {
         const session = await page.target().createCDPSession()
         try {
           // Limited to 256MB
@@ -268,37 +251,30 @@ export const checkPage = async (args) => {
         }
       }
 
-      if (l > 1) {
-        throw new Error('Too many candidate elements detected (' + l + ')')
-      }
-      if (l === 1) {
-        report.identified = true
-        const element = await inPageResult.evaluateHandle(r => r.elements[0])
-        const boundingBox = await element.boundingBox()
-        if (boundingBox.height === 0 || boundingBox.width === 0) {
-          // it won't work for a screenshot. Find another element to capture, somehow
-        } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
-          const screenshotB64 = await element.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
-          report.screenshot = screenshotB64
+      report.classifiersUsed = enabledClassifiers.sort() // include for backwards compatibility
+
+      report.scrollBlocked = await page.evaluate(() => {
+        let scrollBlocked = false
+        if (document.querySelectorAll('dialog[open]').length === 0) {
+          if (getComputedStyle(document.body).overflowY === 'hidden') { // eslint-disable-line no-undef
+            scrollBlocked = true
+          }
         }
-        report.markup = String(await unified()
-          .use(rehypeParse, { fragment: true })
-          .use(rehypeFormat)
-          .use(rehypeStringify)
-          .process(await element.evaluate(e => e.outerHTML))).trim()
-      }
-      report.classifiersUsed = await inPageResult.evaluate(r => r.classifiersUsed)
+        return scrollBlocked
+      })
+
       // Add full page screenshot if explicitly requested or if no element was detected and screenshot is set to "always"
       if (['always', 'fullPage'].includes(includeScreenshot) && !report.screenshot) {
         // TODO: scroll to bottom to trigger lazy-loaded elements
         const screenshotB64 = await page.screenshot({ fullPage: true, omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
         report.screenshot = screenshotB64
       }
-      report.scrollBlocked = ((await inPageResult.evaluate(r => r.scrollBlocked)) === true)
     } catch (err) {
       report.error = err.message
     } finally {
-      await inPageResult.dispose()
+      if (candidateElementsHandle) {
+        await candidateElementsHandle.dispose()
+      }
     }
   } catch (err) {
     report.error = err.message

@@ -159,12 +159,11 @@ details pre {
   display: none;
   z-index: 1000;
 }
-.warning-icon {
-  background: hsl(45deg 100% 85%);
-  color: hsl(45deg 100% 20%);
-  padding: 0.25em 1em;
-  margin-left: 0.5em;
-  border-radius: 1em;
+.tag {
+  display: inline-flex;
+  padding: 0.125rem 0.625rem;
+  border-radius: 0.375rem;
+  margin-left: 0.5rem;
   cursor: help;
 }
     </style>
@@ -389,25 +388,55 @@ details pre {
           return card;
         }
 
-        const appendClassifierWarning = (p, report) => {
-          if (report.classifiersUsed.includes('keyword')) {
-            const span = document.createElement('span');
-            span.textContent = '!';
-            span.classList.add('warning-icon')
-            span.title = 'Fallback classifier used. Result may be inaccurate.';
-            p.appendChild(span);
-          }
-        }
+        // TODO: Add extractor labels
+        const appendClassifierLabels = (p, classifierResults) => {
+          if (!classifierResults) return;
+
+          Object.entries(classifierResults).forEach(([classifier, isMatch]) => {
+            const label = document.createElement('span');
+            label.classList.add('tag');
+
+            switch(classifier) {
+              case 'keyword':
+                label.textContent = 'K';
+                label.title = 'Keyword classifier';
+                if (isMatch) {
+                  label.style.backgroundColor = '#f3e8ff';
+                  label.style.color = '#7c3aed';
+                } else {
+                  label.style.backgroundColor = '#f3f4f6';
+                  label.style.color = '#6b7280';
+                }
+                break;
+              case 'llm':
+                label.textContent = 'L';
+                label.title = 'LLM classifier';
+                if (isMatch) {
+                  label.style.backgroundColor = '#dbeafe';
+                  label.style.color = '#2563eb';
+                } else {
+                  label.style.backgroundColor = '#f3f4f6';
+                  label.style.color = '#6b7280';
+                }
+                break;
+              default:
+                label.textContent = '?';
+                label.title = `Unknown classifier: ${classifier}`;
+            }
+
+            p.appendChild(label);
+          });
+        };
 
         if (report.identified !== true) {
           const p = document.createElement('p');
           p.textContent = 'No cookie consent notices were identified.';
-          appendClassifierWarning(p, report)
+          appendClassifierLabels(p, report.classifierResults);
           card.appendChild(p);
         } else {
           const p = document.createElement('p');
           p.textContent = 'A cookie consent notice was identified.';
-          appendClassifierWarning(p, report)
+          appendClassifierLabels(p, report.classifierResults);
           card.appendChild(p);
 
           if (report.markup !== undefined) {
