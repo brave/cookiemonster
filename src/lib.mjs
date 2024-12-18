@@ -206,11 +206,11 @@ export const checkPage = async (args) => {
         throw error
       }
 
-      const l = await inPageResult.evaluate(r => r.elements.length)
-      const elementDetected = l === 1
+      const l = await inPageResult.evaluate(r => r.cookieNotices.length)
+      const cookieNoticeDetected = l === 1
 
       // Capture MHTML if requested
-      if (includeMhtml === 'always' || (includeMhtml === 'onDetection' && elementDetected)) {
+      if (includeMhtml === 'always' || (includeMhtml === 'onDetection' && cookieNoticeDetected)) {
         const session = await page.target().createCDPSession()
         try {
           // Limited to 256MB
@@ -231,23 +231,33 @@ export const checkPage = async (args) => {
       report.url = page.url()
 
       if (l > 1) {
-        throw new Error('Too many candidate elements detected (' + l + ')')
+        throw new Error('Too many candidate cookie notice elements detected (' + l + ')')
       }
       if (l === 1) {
         report.identified = true
-        const element = await inPageResult.evaluateHandle(r => r.elements[0])
-        const boundingBox = await element.boundingBox()
+        const cookieNotice = {
+          innermostHideableElement: await inPageResult.evaluateHandle(r => r.cookieNotices[0].innermostHideableElement),
+          outermostHideableElement: await inPageResult.evaluateHandle(r => r.cookieNotices[0].outermostHideableElement),
+          hideableElementRange: await inPageResult.evaluate(r => r.cookieNotices[0].hideableElementRange)
+        }
+        const boundingBox = await cookieNotice.innermostHideableElement.boundingBox()
         if (boundingBox.height === 0 || boundingBox.width === 0) {
           // it won't work for a screenshot. Find another element to capture, somehow
         } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
-          const screenshotB64 = await element.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
+          const screenshotB64 = await cookieNotice.innermostHideableElement.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
           report.screenshot = screenshotB64
         }
         report.markup = String(await unified()
           .use(rehypeParse, { fragment: true })
           .use(rehypeFormat)
           .use(rehypeStringify)
-          .process(await element.evaluate(e => e.outerHTML))).trim()
+          .process(await cookieNotice.outermostHideableElement.evaluate(e => e.outerHTML))).trim()
+        report.markupInner = String(await unified()
+          .use(rehypeParse, { fragment: true })
+          .use(rehypeFormat)
+          .use(rehypeStringify)
+          .process(await cookieNotice.innermostHideableElement.evaluate(e => e.outerHTML))).trim()
+        report.hideableElementRange = cookieNotice.hideableElementRange
       }
       report.classifiersUsed = await inPageResult.evaluate(r => r.classifiersUsed)
       // Add full page screenshot if explicitly requested or if no element was detected and screenshot is set to "always"

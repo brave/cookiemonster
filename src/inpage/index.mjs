@@ -73,24 +73,24 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return true
   })
 
-  const uncontainedElements = []
+  const nonParentElements = []
   if (linkCheckedElements.length > 0) {
     for (let i = linkCheckedElements.length - 1; i >= 0; i--) {
-      let contained = false
+      let container = false
       for (let j = 0; j < linkCheckedElements.length; j++) {
-        if (i !== j && linkCheckedElements[j].contains(linkCheckedElements[i])) {
-          contained = true
+        if (i !== j && linkCheckedElements[i].contains(linkCheckedElements[j])) {
+          container = true
           break
         }
       }
-      if (!contained) {
-        uncontainedElements.push(linkCheckedElements[i])
+      if (!container) {
+        nonParentElements.push(linkCheckedElements[i])
       }
     }
   }
 
   const classifiersUsed = new Set()
-  const contentCheckedElements = await asyncFilter(uncontainedElements, async node => {
+  const contentCheckedElements = await asyncFilter(nonParentElements, async node => {
     const innerText = node.innerText
     if (innerText.trim() === '') {
       // some sites dump their cookie notices into iframes
@@ -113,6 +113,47 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return classification
   })
 
+  // Elements in `contentCheckedElements` constitute "minimum viable cookie notices".
+  // However, their parent elements may also be eligible for hiding:
+  // - parent elements with no other significant content **can** be safely hidden
+  // - parent elements with a full-page overlay **should** be hidden in addition to the notice
+  const identifiedCookieNotices = []
+  for (const node of contentCheckedElements) {
+    let outermostHideableElement = node
+    let innermostHideableElement = node
+    let hideableElementRange = 1
+    // Begin by looking upwards in the DOM for the outermost element that _can_ be hidden.
+    // When traversing upwards, this is the last element that adds no additional content to the
+    // original notice's `innerText`.
+    while (outermostHideableElement.parentElement &&
+      outermostHideableElement.parentElement.innerText.trim() === node.innerText.trim()) {
+      outermostHideableElement = outermostHideableElement.parentElement
+      hideableElementRange += 1
+      // In the meantime, look for the innermost element that _should_ be hidden.
+      // While traversing upwards, this is either the first element, or the last element that has:
+      // - full screen dimensions, AND
+      // - a blur filter and/or semi-transparent background style
+      const style = getComputedStyle(outermostHideableElement)
+      const nodeRect = outermostHideableElement.getBoundingClientRect()
+      if (nodeRect.left === windowRect.left &&
+        nodeRect.right === windowRect.right &&
+        nodeRect.top === windowRect.top &&
+        nodeRect.bottom === windowRect.bottom &&
+        (style.backgroundColor.startsWith('rgba(') ||
+        style.backdropFilter !== 'none')) {
+        innermostHideableElement = outermostHideableElement
+        hideableElementRange = 1
+      }
+    }
+
+    const identifiedNotice = {
+      innermostHideableElement,
+      outermostHideableElement,
+      hideableElementRange
+    }
+    identifiedCookieNotices.push(identifiedNotice)
+  }
+
   // Scroll blocking detection
   let scrollBlocked = false
   if (document.querySelectorAll('dialog[open]').length === 0) {
@@ -122,7 +163,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
   }
 
   return {
-    elements: contentCheckedElements,
+    cookieNotices: identifiedCookieNotices,
     classifiersUsed: Array.from(classifiersUsed).sort(),
     scrollBlocked,
     url: window.location.href
