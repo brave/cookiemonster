@@ -392,7 +392,7 @@ details pre {
         const appendClassifierLabels = (p, classifierResults) => {
           if (!classifierResults) return;
 
-          Object.entries(classifierResults).forEach(([classifier, isMatch]) => {
+          Object.entries(classifierResults).forEach(([classifier, result]) => {
             const label = document.createElement('span');
             label.classList.add('tag');
 
@@ -400,23 +400,33 @@ details pre {
               case 'keyword':
                 label.textContent = 'K';
                 label.title = 'Keyword classifier';
-                if (isMatch) {
+                if (result.isMatch === true) {
                   label.style.backgroundColor = '#f3e8ff';
                   label.style.color = '#7c3aed';
-                } else {
+                } else if (result.isMatch === false) {
                   label.style.backgroundColor = '#f3f4f6';
                   label.style.color = '#6b7280';
+                } else {
+                  // result.isMatch is null (failure)
+                  label.style.backgroundColor = '#fecaca';
+                  label.style.color = '#b91c1c';
+                  label.title += ' (failed)';
                 }
                 break;
               case 'llm':
                 label.textContent = 'L';
                 label.title = 'LLM classifier';
-                if (isMatch) {
+                if (result.isMatch === true) {
                   label.style.backgroundColor = '#dbeafe';
                   label.style.color = '#2563eb';
-                } else {
+                } else if (result.isMatch === false) {
                   label.style.backgroundColor = '#f3f4f6';
                   label.style.color = '#6b7280';
+                } else {
+                  // result.isMatch is null (failure)
+                  label.style.backgroundColor = '#fecaca';
+                  label.style.color = '#b91c1c';
+                  label.title += ' (failed)';
                 }
                 break;
               default:

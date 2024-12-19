@@ -30,7 +30,6 @@ export async function classify (page, text, openai) {
 
   Is the overlay element above considered to be a "cookie consent notice"? Provide your answer as a boolean.
   `
-
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || 'llama3',
     messages: [
@@ -42,6 +41,5 @@ export async function classify (page, text, openai) {
     temperature: 0,
     top_p: 0
   })
-
   return Boolean(response.choices[0].message.content.match(/true/i))
 }

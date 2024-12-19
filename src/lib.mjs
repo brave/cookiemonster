@@ -184,7 +184,7 @@ export const checkPage = async (args) => {
       const enabledClassifiers = ['llm', 'keyword'] // TODO: Add to API
 
       let foundMatch = false
-      // TODO: This currently evaluates all candidate elements in order to throw an error if too many are detected, consider adding an option to only evaluate until the first match is found
+
       for (let i = 0; i < candidateElementsCount; i++) {
         const elementHandle = await candidateElementsHandle.evaluateHandle((r, idx) => r[idx], i)
         try {
@@ -194,38 +194,40 @@ export const checkPage = async (args) => {
           }))
 
           const classifierResults = await runClassifiers(page, element, { openai: openaiClient }, enabledClassifiers)
-          const isMatch = Object.values(classifierResults).some(result => result)
+          const isMatch = classifierResults.verdict === true
+
           if (isMatch) {
-            if (foundMatch) {
-              // multiple matches found, throw an error
+            if (!foundMatch) {
+              foundMatch = true
+
+              report.identified = true
+              report.extractor = extractor
+              report.classifierResults = classifierResults.results
+
+              const boundingBox = await elementHandle.boundingBox()
+              if (boundingBox.height === 0 || boundingBox.width === 0) {
+                // it won't work for a screenshot. Find another element to capture, somehow
+              } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
+                const screenshotB64 = await elementHandle.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
+                report.screenshot = screenshotB64
+              }
+
+              report.markup = String(await unified()
+                .use(rehypeParse, { fragment: true })
+                .use(rehypeFormat)
+                .use(rehypeStringify)
+                .process(element.outerHTML)).trim()
+            } else {
+              // Found another match - throw error
               throw new Error(`
                 Multiple matches found, extractor: ${extractor}, enabledClassifiers: ${enabledClassifiers.sort().join(', ')}
                 previous classifierResults: ${JSON.stringify(report.classifierResults)}
-                current classifierResults: ${JSON.stringify(classifierResults)}
+                current classifierResults: ${JSON.stringify(classifierResults.results)}
                 candidateElements: ${candidateElementsCount}
                 ${/* previous markup: ${report.markup} */ ''}
                 ${/* current markup: ${element.outerHTML} */ ''}
               `)
             }
-            foundMatch = true
-
-            report.identified = true
-            report.extractor = extractor
-            report.classifierResults = classifierResults
-
-            const boundingBox = await elementHandle.boundingBox()
-            if (boundingBox.height === 0 || boundingBox.width === 0) {
-              // it won't work for a screenshot. Find another element to capture, somehow
-            } else if (includeScreenshot && includeScreenshot !== 'fullPage') {
-              const screenshotB64 = await elementHandle.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
-              report.screenshot = screenshotB64
-            }
-
-            report.markup = String(await unified()
-              .use(rehypeParse, { fragment: true })
-              .use(rehypeFormat)
-              .use(rehypeStringify)
-              .process(element.outerHTML)).trim()
           }
         } finally {
           await elementHandle.dispose()
