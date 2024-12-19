@@ -8,6 +8,7 @@
   },
   "scripts": {
     "setup": "node src/setup.mjs",
+    "dev": "nodemon --watch src src/api.mjs",
     "serve": "node --import ./src/instrument.mjs src/api.mjs",
     "rebrowser-patches": "rebrowser-patches patch --packageName puppeteer-core",
     "test": "node --test test/test.mjs",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@reporters/github": "1.7.1",
+    "nodemon": "^3.1.7",
     "standard": "17.1.2"
   }
 }
