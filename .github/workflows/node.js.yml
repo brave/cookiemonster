@@ -52,7 +52,7 @@ jobs:
 
     - name: Start background pull of bedrock proxy image
       run: |
-        nohup docker pull 366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest > /dev/null 2>&1 &
+        nohup docker pull 366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest-amd64 > /dev/null 2>&1 &
 
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
@@ -84,7 +84,7 @@ jobs:
           -e "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}" \
           -e "AWS_REGION=${AWS_REGION}" \
           -e "DEFAULT_MODEL=${BEDROCK_MODEL}" \
-          366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest
+          366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest-amd64
 
     #- name: Wait for Ollama model pull
     #  run: |
