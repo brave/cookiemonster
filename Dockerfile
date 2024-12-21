@@ -37,6 +37,12 @@ RUN npm run setup -- ${BRAVE_BINARY} && chmod -R o+rX /app/profile
 EXPOSE 3000
 COPY --chmod=755 <<EOT /docker-entrypoint.sh
 #!/bin/sh
-exec npm run serve -- ${BRAVE_BINARY} 3000
+echo "DEV: \$DEV"
+if [ \$DEV ]; then
+  exec npm run dev -- ${BRAVE_BINARY} 3000
+else
+  exec npm run serve -- ${BRAVE_BINARY} 3000
+fi
 EOT
+ENV DEV=false
 ENTRYPOINT ["/docker-entrypoint.sh"]
