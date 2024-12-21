@@ -195,7 +195,7 @@ export const checkPage = async (args) => {
             }
 
             // Extract text including iframes
-            async function getElementText(element) {
+            async function getElementText (element) {
               let text = element.innerText || ''
 
               if (text.trim() === '') {
@@ -217,7 +217,6 @@ export const checkPage = async (args) => {
               outerHTML: el.outerHTML
             }
           }, randomToken)
-
 
           const classifierResults = await runClassifiers(page, element, { openai: openaiClient }, enabledClassifiers)
           const isMatch = classifierResults.verdict === true

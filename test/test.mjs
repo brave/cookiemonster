@@ -44,7 +44,7 @@ async function testPage (t, testCasePath, expectedHash, expectedScrollBlocking) 
     : 'should detect notice'
 
   await t.test(cookieNoticeTestName, async (t) => {
-    //t.diagnostic(r.markup)
+    // t.diagnostic(r.markup)
     t.assert.strictEqual(markupHash, expectedHash,
       `expected hash "${expectedHash}" did not match markup "${markupHash}"`)
   })
