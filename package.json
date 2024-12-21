@@ -38,7 +38,7 @@
     "unified": "^11.0.4"
   },
   "devDependencies": {
-    "@reporters/github": "1.7.1",
+    "@reporters/github": "1.7.2",
     "nodemon": "^3.1.7",
     "standard": "17.1.2"
   }
