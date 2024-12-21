@@ -20,8 +20,10 @@ const args = {
     bfpgedeaaibpoidldhjcknekahbikncb: false
   }
 }
-// Calculate concurrency based on available CPU cores
-const CONCURRENCY = Math.max(1, Math.floor(cpus().length / 2))
+// Calculate concurrency based on TEST_CONCURRENCY env var or available CPU cores
+const CONCURRENCY = process.env.TEST_CONCURRENCY
+  ? parseInt(process.env.TEST_CONCURRENCY, 10)
+  : Math.max(1, Math.floor(cpus().length / 2))
 console.log(`Running tests with concurrency: ${CONCURRENCY}`)
 
 async function testPage (t, testCasePath, expectedHash, expectedScrollBlocking) {
@@ -42,6 +44,7 @@ async function testPage (t, testCasePath, expectedHash, expectedScrollBlocking) 
     : 'should detect notice'
 
   await t.test(cookieNoticeTestName, async (t) => {
+    //t.diagnostic(r.markup)
     t.assert.strictEqual(markupHash, expectedHash,
       `expected hash "${expectedHash}" did not match markup "${markupHash}"`)
   })

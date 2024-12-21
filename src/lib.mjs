@@ -186,12 +186,38 @@ export const checkPage = async (args) => {
       let foundMatch = false
 
       for (let i = 0; i < candidateElementsCount; i++) {
+        // Get a handle to the candidate element from the array of elements returned by the extractor
         const elementHandle = await candidateElementsHandle.evaluateHandle((r, idx) => r[idx], i)
         try {
-          const element = await elementHandle.evaluate(el => ({
-            innerText: el.innerText,
-            outerHTML: el.outerHTML
-          }))
+          const element = await elementHandle.evaluate(async (el, randomToken) => {
+            const hostAPI = {
+              extractFrameText: (...args) => window[randomToken]('extractFrameText', ...args)
+            }
+
+            // Extract text including iframes
+            async function getElementText(element) {
+              let text = element.innerText || ''
+
+              if (text.trim() === '') {
+                const iframes = element.querySelectorAll('iframe')
+                for (const iframe of iframes) {
+                  const innerText = await hostAPI.extractFrameText(iframe)
+                  if (innerText.trim() === '') {
+                    continue
+                  }
+                  text = innerText
+                }
+              }
+
+              return text.trim()
+            }
+
+            return {
+              innerText: await getElementText(el),
+              outerHTML: el.outerHTML
+            }
+          }, randomToken)
+
 
           const classifierResults = await runClassifiers(page, element, { openai: openaiClient }, enabledClassifiers)
           const isMatch = classifierResults.verdict === true
