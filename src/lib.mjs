@@ -174,8 +174,11 @@ export const checkPage = async (args) => {
     try {
       ({ candidateElementsHandle, extractor, candidateElementsCount } = await runExtractors(page, {
         randomToken,
-        hostOverride: args.hostOverride
+        hostOverride: args.hostOverride,
+        openai: openaiClient
       }))
+
+      report.extractor = extractor
 
       if (candidateElementsCount > MAX_CANDIDATE_ELEMENTS) {
         throw new Error(`Too many candidate elements (${candidateElementsCount}) using ${extractor} extractor. Maximum is ${MAX_CANDIDATE_ELEMENTS}`)
