@@ -1,12 +1,15 @@
 import * as htmlExtractor from './html.mjs'
+import * as visionCoordinatesExtractor from './vision_coordinates.mjs'
 
 export const extractors = [
-  htmlExtractor
+  htmlExtractor,
+  visionCoordinatesExtractor
 ]
 
-export async function runExtractors (page, options, extractors = ['html']) {
+export async function runExtractors (page, options, extractors = ['vision_coordinates', 'html']) {
   const extractorMap = {
-    html: htmlExtractor
+    html: htmlExtractor,
+    vision_coordinates: visionCoordinatesExtractor
   }
 
   // Use specified extractors in the given order
@@ -18,6 +21,10 @@ export async function runExtractors (page, options, extractors = ['html']) {
 
     // const inPageResult = await extractor.extract(page, options)
     const candidateElementsHandle = await extractor.extract(page, options)
+    if (!candidateElementsHandle) { // some extractors return null if no elements are found
+      continue
+    }
+
     const candidateElementsCount = await candidateElementsHandle.evaluate(r => r.length)
 
     try {
@@ -34,6 +41,7 @@ export async function runExtractors (page, options, extractors = ['html']) {
       }
     }
   }
+
   return {
     extractor: null,
     candidateElements: null // return empty handle?

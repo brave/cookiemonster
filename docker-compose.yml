@@ -23,6 +23,7 @@ services:
       - OPENAI_BASE_URL=http://litellm:4000
       - OPENAI_API_KEY=sk-litellm
       - OPENAI_MODEL=meta.llama3-8b-instruct-v1:0
+      - OPENAI_VISION_MODEL=anthropic.claude-3-5-sonnet-20241022-v2:0
     profiles:
       - litellm
     depends_on:
