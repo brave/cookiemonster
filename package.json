@@ -13,7 +13,9 @@
     "test": "node --test test/test.mjs",
     "test:ci": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=@reporters/github --test-reporter-destination=stdout test/test.mjs",
     "lint": "standard",
-    "lint-fix": "standard --fix"
+    "lint-fix": "standard --fix",
+    "build": "esbuild --bundle --format=esm --outdir=bundles src/inpage/index.mjs",
+    "watch": "npm run build -- --watch"
   },
   "main": "src/lib.mjs",
   "dependencies": {
@@ -38,6 +40,7 @@
   },
   "devDependencies": {
     "@reporters/github": "1.7.2",
+    "esbuild": "^0.24.2",
     "standard": "17.1.2"
   }
 }

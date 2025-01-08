@@ -21,7 +21,6 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import { KnownDevices } from 'puppeteer-core'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
-import { inPageRoutine } from './inpage.mjs'
 import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered } from './util.mjs'
 
 // Generate a random string between [a000000000, zzzzzzzzzz] (base 36)
@@ -136,8 +135,8 @@ Is the overlay element above considered to be a "cookie consent notice"? Provide
 const shouldBlockRequest = (request) => {
   const url = request.url()
 
-  // Block non-http/https URLs
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+  // Block non-http/https/data URLs
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
     console.log(`Blocked URL: ${url}`)
     return true
   }
@@ -243,7 +242,16 @@ export const checkPage = async (args) => {
 
     const randomToken = generateRandomToken()
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
-    const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
+
+    const moduleBase64 = Buffer.from(await fs.readFile(path.join(import.meta.dirname, '..', 'bundles', 'index.js'))).toString('base64')
+    const moduleUrl = `data:text/javascript;base64,${moduleBase64}`
+
+    const inpageWrapper = async (moduleUrl, ...args) => {
+      const { inPageRoutine } = await import(moduleUrl)
+      return await inPageRoutine(...args)
+    }
+
+    const inPageResult = await page.evaluateHandle(inpageWrapper, moduleUrl, randomToken, args.hostOverride)
 
     try {
       const l = await inPageResult.evaluate(r => r.elements.length)
