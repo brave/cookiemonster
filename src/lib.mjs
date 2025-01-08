@@ -21,7 +21,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import { KnownDevices } from 'puppeteer-core'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
-import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered } from './util.mjs'
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered, fixupBundleStackTrace, getBundlePaths } from './util.mjs'
 
 // Generate a random string between [a000000000, zzzzzzzzzz] (base 36)
 const generateRandomToken = () => {
@@ -167,7 +167,7 @@ export const checkPage = async (args) => {
     await fs.cp(templateProfile, workingProfile, { recursive: true })
   } catch (err) {
     await fs.rm(workingProfile, { recursive: true })
-    report.error = err.message
+    report.error = err.stack
     return report
   }
   const listCatalogPath = path.join(workingProfile, 'gkboaolpopklhgplhaaiboijnklogmbc', '999.999', 'list_catalog.json')
@@ -243,17 +243,29 @@ export const checkPage = async (args) => {
     const randomToken = generateRandomToken()
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
 
-    const moduleBase64 = Buffer.from(await fs.readFile(path.join(import.meta.dirname, '..', 'bundles', 'index.js'))).toString('base64')
+    const inpageBundle = getBundlePaths('index.js')
+
+    const moduleBase64 = Buffer.from(await fs.readFile(inpageBundle.code)).toString('base64')
     const moduleUrl = `data:text/javascript;base64,${moduleBase64}`
 
     const inpageWrapper = async (moduleUrl, ...args) => {
       const { inPageRoutine } = await import(moduleUrl)
-      return await inPageRoutine(...args)
+      try {
+        return await inPageRoutine(...args)
+      } catch (e) {
+        return e
+      }
     }
 
     const inPageResult = await page.evaluateHandle(inpageWrapper, moduleUrl, randomToken, args.hostOverride)
 
     try {
+      if (await inPageResult.evaluate(async e => (await e) instanceof Error)) {
+        const error = await inPageResult.evaluate(e => { return { message: e.message, stack: e.stack } })
+        error.stack = await fixupBundleStackTrace(error, inpageBundle.sourcemap)
+        throw error
+      }
+
       const l = await inPageResult.evaluate(r => r.elements.length)
       const elementDetected = l === 1
 
@@ -306,12 +318,12 @@ export const checkPage = async (args) => {
       }
       report.scrollBlocked = ((await inPageResult.evaluate(r => r.scrollBlocked)) === true)
     } catch (err) {
-      report.error = err.message
+      report.error = err.stack
     } finally {
       await inPageResult.dispose()
     }
   } catch (err) {
-    report.error = err.message
+    report.error = err.stack
   } finally {
     await page.close()
 

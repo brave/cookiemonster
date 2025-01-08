@@ -14,7 +14,7 @@
     "test:ci": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=@reporters/github --test-reporter-destination=stdout test/test.mjs",
     "lint": "standard",
     "lint-fix": "standard --fix",
-    "build": "esbuild --bundle --format=esm --outdir=bundles src/inpage/index.mjs",
+    "build": "esbuild --bundle --format=esm --sourcemap --outdir=bundles src/inpage/index.mjs",
     "watch": "npm run build -- --watch"
   },
   "main": "src/lib.mjs",
@@ -24,6 +24,7 @@
     "@koa/router": "^13.0.0",
     "@sentry/node": "^8.26.0",
     "async-mutex": "^0.5.0",
+    "error-stack-parser": "^2.1.4",
     "koa": "^2.15.3",
     "koa-compress": "^5.1.1",
     "nunjucks": "^3.2.4",
@@ -36,6 +37,7 @@
     "rehype-format": "^5.0.0",
     "rehype-parse": "^9.0.0",
     "rehype-stringify": "^10.0.0",
+    "source-map": "^0.7.4",
     "unified": "^11.0.4"
   },
   "devDependencies": {
