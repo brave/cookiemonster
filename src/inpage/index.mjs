@@ -6,7 +6,7 @@ const asyncFilter = async (arr, predicate) => Promise.all(arr.map(predicate))
 // This is the main routine that runs within a page and returns information about detected elements.
 // Function dependencies from the host can be exposed and accessed via the API exposed by `randomToken`.
 export async function inPageRoutine (randomToken, hostOverride) {
-  const hostAPI = ['getETLDP1', 'classifyInnerText', 'extractFrameText'].reduce((acc, v) => {
+  const hostAPI = ['getETLDP1', 'classifyCookieNoticeText', 'extractFrameText'].reduce((acc, v) => {
     acc[v] = (...args) => window[randomToken](v, ...args)
     return acc
   }, {})
@@ -100,7 +100,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
         if (innerText.trim() === '') {
           continue
         }
-        const { classifier, classification } = await hostAPI.classifyInnerText(innerText)
+        const { classifier, classification } = await hostAPI.classifyCookieNoticeText(innerText)
         classifiersUsed.add(classifier)
         if (classification) {
           return true
@@ -108,7 +108,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
       }
       return false
     }
-    const { classifier, classification } = await hostAPI.classifyInnerText(node.innerText)
+    const { classifier, classification } = await hostAPI.classifyCookieNoticeText(node.innerText)
     classifiersUsed.add(classifier)
     return classification
   })
