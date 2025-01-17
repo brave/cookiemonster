@@ -374,6 +374,15 @@ details pre {
         
         card.appendChild(h2);
 
+        if (report.url !== report.originalUrl) {
+          const h3 = document.createElement('h3');
+          h3.textContent = 'redirected from ';
+          const code = document.createElement('code');
+          code.textContent = report.originalUrl;
+          h3.appendChild(code);
+          card.appendChild(h3);
+        }
+
         const datestring = document.createElement('p');
         datestring.classList.add('datestring');
         datestring.textContent = new Date(report.timestamp).toString();
