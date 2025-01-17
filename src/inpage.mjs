@@ -24,6 +24,12 @@ export async function inPageRoutine (randomToken, hostOverride) {
     return acc
   }, {})
 
+  await new Promise(resolve => {
+    window.onload = () => {
+      resolve()
+    }
+  })
+
   const fixedPositionElements = []
   const walker = document.createTreeWalker(
     document.documentElement,
