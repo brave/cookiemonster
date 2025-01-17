@@ -155,7 +155,7 @@ export const checkPage = async (args) => {
   const includeMhtml = args.includeMhtml ?? 'never'
 
   const report = {
-    url,
+    originalUrl: url,
     timestamp: Date.now(),
     scriptSources: new Set()
   }
@@ -267,6 +267,8 @@ export const checkPage = async (args) => {
           await session.detach()
         }
       }
+
+      report.url = page.url()
 
       if (l > 1) {
         throw new Error('Too many candidate elements detected (' + l + ')')

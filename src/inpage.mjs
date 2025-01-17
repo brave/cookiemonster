@@ -140,6 +140,7 @@ export async function inPageRoutine (randomToken, hostOverride) {
   return {
     elements: contentCheckedElements,
     classifiersUsed: Array.from(classifiersUsed).sort(),
-    scrollBlocked
+    scrollBlocked,
+    url: window.location.href
   }
 }
