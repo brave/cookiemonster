@@ -146,10 +146,23 @@ export async function inPageRoutine (randomToken, hostOverride) {
       }
     }
 
+    let n = innermostHideableElement
+    const hideableIds = []
+    do {
+      const id = n.getAttribute('id')
+      if (id !== null && id !== '') {
+        hideableIds.push(id)
+      }
+      if (n === outermostHideableElement) {
+        break
+      }
+      n = n.parentElement
+    } while (true)
     const identifiedNotice = {
       innermostHideableElement,
       outermostHideableElement,
-      hideableElementRange
+      hideableElementRange,
+      hideableIds
     }
     identifiedCookieNotices.push(identifiedNotice)
   }

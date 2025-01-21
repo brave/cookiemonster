@@ -238,7 +238,8 @@ export const checkPage = async (args) => {
         const cookieNotice = {
           innermostHideableElement: await inPageResult.evaluateHandle(r => r.cookieNotices[0].innermostHideableElement),
           outermostHideableElement: await inPageResult.evaluateHandle(r => r.cookieNotices[0].outermostHideableElement),
-          hideableElementRange: await inPageResult.evaluate(r => r.cookieNotices[0].hideableElementRange)
+          hideableElementRange: await inPageResult.evaluate(r => r.cookieNotices[0].hideableElementRange),
+          hideableIds: await inPageResult.evaluate(r => r.cookieNotices[0].hideableIds)
         }
         const boundingBox = await cookieNotice.innermostHideableElement.boundingBox()
         if (boundingBox.height === 0 || boundingBox.width === 0) {
@@ -257,6 +258,7 @@ export const checkPage = async (args) => {
           .use(rehypeFormat)
           .use(rehypeStringify)
           .process(await cookieNotice.innermostHideableElement.evaluate(e => e.outerHTML))).trim()
+        report.hideableIds = cookieNotice.hideableIds
         report.hideableElementRange = cookieNotice.hideableElementRange
       }
       report.classifiersUsed = await inPageResult.evaluate(r => r.classifiersUsed)

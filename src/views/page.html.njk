@@ -346,6 +346,7 @@ details pre {
       function createReportCard(report) {
         const card = document.createElement('div');
         card.classList.add('report-card');
+        card.setAttribute('data-report', JSON.stringify(report));
 
         const h2 = document.createElement('h2');
         h2.textContent = 'Report for ';
@@ -418,6 +419,12 @@ details pre {
           p.textContent = 'A cookie consent notice was identified.';
           appendClassifierWarning(p, report)
           card.appendChild(p);
+
+          if (report.hideableIds !== undefined && report.hideableIds.length > 0) {
+            const idList = document.createElement('pre');
+            idList.textContent = report.hideableIds.map(id => `#${id}`).join('\n');
+            card.appendChild(idList);
+          }
 
           if (report.markup !== undefined) {
             const details = document.createElement('details');
