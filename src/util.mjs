@@ -1,7 +1,10 @@
+import fs from 'fs/promises'
 import path from 'path'
 import { readFileSync, readdirSync, writeFileSync } from 'fs'
 import { setTimeout } from 'timers/promises'
 import { KnownDevices } from 'puppeteer-core'
+import ErrorStackParser from 'error-stack-parser'
+import SourceMap from 'source-map'
 
 const chromeComponentIdPattern = /^[a-p]{32}$/
 
@@ -135,4 +138,53 @@ export function getFilteredKnownDevices () {
     const deviceName = KnownDevices[key].name
     return deviceName && (deviceName.includes('iPhone 15 Pro Max') || deviceName.includes('Pixel 5') || deviceName.includes('Galaxy S9'))
   })
+}
+
+export function getBundlePaths (name) {
+  const code = path.join(import.meta.dirname, '..', 'bundles', name)
+  const sourcemap = code + '.map'
+  return {
+    code,
+    sourcemap
+  }
+}
+
+// Replace stack trace frames from a dynamically imported module data: URL
+// into human-readable locations according to the corresponding source map
+export async function fixupBundleStackTrace (error, sourcemapPath) {
+  const sourcemap = await new SourceMap.SourceMapConsumer(await fs.readFile(sourcemapPath, 'utf8'))
+  const mappedTrace = ErrorStackParser.parse(error).map(frame => {
+    if (frame.fileName.startsWith('pptr:')) {
+      return undefined
+    }
+
+    const newLocation = sourcemap.originalPositionFor({
+      line: frame.lineNumber,
+      column: frame.columnNumber
+    })
+
+    if (newLocation.line === null || newLocation.column === null) {
+      return undefined
+    }
+
+    return {
+      ...frame,
+      functionName: newLocation.name ?? frame.functionName,
+      fileName: newLocation.source,
+      lineNumber: newLocation.line,
+      columnNumber: newLocation.column
+    }
+  })
+  const originalTraceLines = error.stack.split('\n')
+  let fixedTrace = originalTraceLines[0]
+  for (let i = 0; i < mappedTrace.length; i++) {
+    if (mappedTrace[i] !== undefined) {
+      const frame = mappedTrace[i]
+      fixedTrace += `\n    at ${frame.functionName}(${frame.fileName}):${frame.lineNumber}:${frame.columnNumber}`
+    } else {
+      fixedTrace += '\n' + originalTraceLines[i + 1]
+    }
+  }
+  console.log(fixedTrace)
+  return fixedTrace
 }

@@ -104,6 +104,10 @@ jobs:
     #      sleep 5
     #    done
 
+    - name: Build bundles
+      run: |
+        npm run build
+
     - name: Run Tests
       env:
         OPENAI_API_KEY: bedrock

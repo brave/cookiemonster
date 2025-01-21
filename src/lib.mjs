@@ -21,8 +21,9 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import { KnownDevices } from 'puppeteer-core'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
-import { inPageRoutine } from './inpage.mjs'
-import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered } from './util.mjs'
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered, fixupBundleStackTrace, getBundlePaths } from './util.mjs'
+
+import { cookieNoticeClassifier } from './text-classification.mjs'
 
 // Generate a random string between [a000000000, zzzzzzzzzz] (base 36)
 const generateRandomToken = () => {
@@ -36,85 +37,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'ollama'
 })
 
-const MAX_LENGTH = 500
-
-const keywordClassifierFallback = (innerText) => {
-  const keywords = [
-    'cookies',
-    'consent',
-    'privacy',
-    'analytics',
-    'accept',
-    'only necessary',
-    'reject'
-  ]
-  const lower = innerText.toLowerCase()
-  for (const keyword of keywords) {
-    if (lower.includes(keyword)) {
-      return true
-    }
-  }
-  return false
-}
-
 const inPageAPI = {
   extractFrameText: (iframeHandle) => {
     return iframeHandle.contentFrame().then(frameDoc => frameDoc.evaluate(() => document.documentElement.innerText))
   },
-  classifyInnerText: (innerText) => {
-    let innerTextSnippet = innerText.slice(0, MAX_LENGTH)
-    let ifTruncated = ''
-    if (innerTextSnippet.length !== innerText.length) {
-      innerTextSnippet += '...'
-      ifTruncated = `the first ${MAX_LENGTH} characters of `
-    }
-    const systemPrompt = `Your task is to classify text from the innerText property of HTML overlay elements.
-
-An overlay element is considered to be a "cookie consent notice" if it meets all of these criteria:
-1. it explicitly notifies the user of the site's use of cookies or other storage technology, such as: "We use cookies...", "This site uses...", etc.
-2. it offers the user choices for the usage of cookies on the site, such as: "Accept", "Reject", "Learn More", etc., or informs the user that their use of the site means they accept the usage of cookies.
-
-Note: This definition does not include adult content notices or any other type of notice that is primarily focused on age verification or content restrictions. Cookie consent notices are specifically intended to inform users about the website's use of cookies and obtain their consent for such use.
-
-Note: A cookie consent notice should specifically relate to the site's use of cookies or other storage technology that stores data on the user's device, such as HTTP cookies, local storage, or session storage. Requests for permission to access geolocation information, camera, microphone, etc., do not fall under this category.
-
-Note: Do NOT classify a website header or footer as a "cookie consent notice". Website headers or footers may contain a list of links, possibly including a privacy policy, cookie policy, or terms of service document, but their primary purpose is navigational rather than informational.
-`
-    const prompt = `
-The following text was captured from ${ifTruncated}the innerText of an HTML overlay element:
-
-\`\`\`
-${innerTextSnippet}
-\`\`\`
-
-Is the overlay element above considered to be a "cookie consent notice"? Provide your answer as a boolean.
-`
-    return openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'llama3',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      // We only need enough tokens for "true" or "false"
-      max_tokens: 2,
-      // Fixed seed and zero temperature to avoid randomized responses
-      seed: 1,
-      temperature: 0,
-      // Only consider the single most likely next token
-      top_p: 0
-    }).then(response => {
-      const answer = response.choices[0].message.content
-      return {
-        classifier: 'llm',
-        classification: answer.match(/true/i)
-      }
-    }).catch(e => {
-      console.error('LLM classification failed:', e)
-      return {
-        classifier: 'keyword',
-        classification: keywordClassifierFallback(innerText)
-      }
-    })
+  classifyCookieNoticeText: (innerText) => {
+    return cookieNoticeClassifier(innerText, openai)
   },
   getETLDP1: (() => {
     let init
@@ -136,8 +64,8 @@ Is the overlay element above considered to be a "cookie consent notice"? Provide
 const shouldBlockRequest = (request) => {
   const url = request.url()
 
-  // Block non-http/https URLs
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+  // Block non-http/https/data URLs
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
     console.log(`Blocked URL: ${url}`)
     return true
   }
@@ -168,7 +96,7 @@ export const checkPage = async (args) => {
     await fs.cp(templateProfile, workingProfile, { recursive: true })
   } catch (err) {
     await fs.rm(workingProfile, { recursive: true })
-    report.error = err.message
+    report.error = err.stack
     return report
   }
   const listCatalogPath = path.join(workingProfile, 'gkboaolpopklhgplhaaiboijnklogmbc', '999.999', 'list_catalog.json')
@@ -243,9 +171,41 @@ export const checkPage = async (args) => {
 
     const randomToken = generateRandomToken()
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
-    const inPageResult = await page.evaluateHandle(inPageRoutine, randomToken, args.hostOverride)
+
+    // Bundled code is in CommonJS format.
+    // CJS is not normally intended for in-browser use. Why choose it over ESM?
+    // - ESM can be imported natively via inline `data:` URLs
+    // - but evaluation of `data:` URLs can be blocked by pages with strict CSP
+    // - ESM's import/export semantics cannot be polyfilled
+    // - Disabling CSP is not ideal because it can reveal use of puppeteer
+    // Instead,
+    // - CJS uses `module.exports`, which doesn't exist in-browser
+    // - `module.exports` semantics can be polyfilled with the small wrapper script below
+    const inpageBundle = getBundlePaths('index.js')
+
+    const bundleCode = await fs.readFile(inpageBundle.code, 'utf8')
+
+    const inpageWrapper = async (bundleCode, ...args) => {
+      const module = { exports: {} }
+      // eslint-disable-next-line
+      eval(`"use strict";\n${bundleCode}`)
+      const { inPageRoutine } = module.exports
+      try {
+        return await inPageRoutine(...args)
+      } catch (e) {
+        return e
+      }
+    }
+
+    const inPageResult = await page.evaluateHandle(inpageWrapper, bundleCode, randomToken, args.hostOverride)
 
     try {
+      if (await inPageResult.evaluate(async e => (await e) instanceof Error)) {
+        const error = await inPageResult.evaluate(e => { return { message: e.message, stack: e.stack } })
+        error.stack = await fixupBundleStackTrace(error, inpageBundle.sourcemap)
+        throw error
+      }
+
       const l = await inPageResult.evaluate(r => r.elements.length)
       const elementDetected = l === 1
 
@@ -298,12 +258,12 @@ export const checkPage = async (args) => {
       }
       report.scrollBlocked = ((await inPageResult.evaluate(r => r.scrollBlocked)) === true)
     } catch (err) {
-      report.error = err.message
+      report.error = err.stack
     } finally {
       await inPageResult.dispose()
     }
   } catch (err) {
-    report.error = err.message
+    report.error = err.stack
   } finally {
     await page.close()
 
