@@ -73,6 +73,11 @@ router.get('/', async (ctx) => {
   ctx.response.type = 'html'
 })
 
+router.get('/version', async (ctx) => {
+  ctx.body = version
+  ctx.response.type = 'text'
+})
+
 router.get('/adblock_lists.json', async (ctx) => {
   ctx.body = await fs.readFile(path.join(import.meta.dirname, '..', 'adblock_lists.json'))
   ctx.response.type = 'json'
@@ -134,6 +139,7 @@ router.post('/check', async (ctx) => {
       })
     })
 
+    report.version = version
     ctx.body = JSON.stringify(report)
     ctx.response.type = 'json'
   } catch (error) {
