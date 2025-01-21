@@ -346,6 +346,7 @@ details pre {
       function createReportCard(report) {
         const card = document.createElement('div');
         card.classList.add('report-card');
+        card.setAttribute('data-report', JSON.stringify(report));
 
         const h2 = document.createElement('h2');
         h2.textContent = 'Report for ';
