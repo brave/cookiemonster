@@ -12,7 +12,6 @@ import { bodyParser } from '@koa/bodyparser'
 import compress from 'koa-compress'
 import * as Sentry from '@sentry/node'
 import Router from '@koa/router'
-import nunjucks from 'nunjucks'
 import { Semaphore, withTimeout } from 'async-mutex'
 
 import { checkPage } from './lib.mjs'
@@ -45,10 +44,6 @@ app.use(compress())
 Sentry.setupKoaErrorHandler(app)
 
 const version = process.env.GIT_COMMIT ? process.env.GIT_COMMIT.slice(0, 6) : 'unknown'
-nunjucks.configure(path.join(import.meta.dirname, 'views'), {
-  autoescape: true,
-  noCache: version === 'unknown' // assume unknown commit is a development environment
-})
 
 const proxyList = process.env.PROXY_LIST ? JSON.parse(process.env.PROXY_LIST) : {}
 const validProxies = Object.keys(proxyList).reduce((acc, region) => {
@@ -67,9 +62,7 @@ const router = new Router()
 
 // Define routes
 router.get('/', async (ctx) => {
-  ctx.body = nunjucks.render('page.html.njk', {
-    version
-  })
+  ctx.body = await fs.readFile(path.join(import.meta.dirname, 'index.html'))
   ctx.response.type = 'html'
 })
 
