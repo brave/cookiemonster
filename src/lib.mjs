@@ -172,13 +172,24 @@ export const checkPage = async (args) => {
     const randomToken = generateRandomToken()
     await page.exposeFunction(randomToken, (name, ...args) => inPageAPI[name](...args))
 
+    // Bundled code is in CommonJS format.
+    // CJS is not normally intended for in-browser use. Why choose it over ESM?
+    // - ESM can be imported natively via inline `data:` URLs
+    // - but evaluation of `data:` URLs can be blocked by pages with strict CSP
+    // - ESM's import/export semantics cannot be polyfilled
+    // - Disabling CSP is not ideal because it can reveal use of puppeteer
+    // Instead,
+    // - CJS uses `module.exports`, which doesn't exist in-browser
+    // - `module.exports` semantics can be polyfilled with the small wrapper script below
     const inpageBundle = getBundlePaths('index.js')
 
-    const moduleBase64 = Buffer.from(await fs.readFile(inpageBundle.code)).toString('base64')
-    const moduleUrl = `data:text/javascript;base64,${moduleBase64}`
+    const bundleCode = await fs.readFile(inpageBundle.code, 'utf8')
 
-    const inpageWrapper = async (moduleUrl, ...args) => {
-      const { inPageRoutine } = await import(moduleUrl)
+    const inpageWrapper = async (bundleCode, ...args) => {
+      const module = { exports: {} }
+      // eslint-disable-next-line
+      eval(`"use strict";\n${bundleCode}`)
+      const { inPageRoutine } = module.exports
       try {
         return await inPageRoutine(...args)
       } catch (e) {
@@ -186,7 +197,7 @@ export const checkPage = async (args) => {
       }
     }
 
-    const inPageResult = await page.evaluateHandle(inpageWrapper, moduleUrl, randomToken, args.hostOverride)
+    const inPageResult = await page.evaluateHandle(inpageWrapper, bundleCode, randomToken, args.hostOverride)
 
     try {
       if (await inPageResult.evaluate(async e => (await e) instanceof Error)) {

@@ -14,7 +14,7 @@
     "test:ci": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=@reporters/github --test-reporter-destination=stdout test/test.mjs",
     "lint": "standard",
     "lint-fix": "standard --fix",
-    "build": "esbuild --bundle --format=esm --sourcemap --outdir=bundles src/inpage/index.mjs",
+    "build": "esbuild --bundle --format=cjs --sourcemap --outdir=bundles src/inpage/index.mjs",
     "watch": "npm run build -- --watch"
   },
   "main": "src/lib.mjs",
