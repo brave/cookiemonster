@@ -42,6 +42,12 @@ code {
   flex-direction: column;
   gap: 1em;
 }
+#dev_menu {
+  display: none;
+}
+.dev-mode #dev_menu {
+  display: block;
+}
 .row {
   display: flex;
   flex-direction: row;
@@ -138,7 +144,7 @@ details pre {
   width: 15em; /* Shortens the width of the devices-select dropdown */
 }
 
-.version {
+#version {
   color: #888;
   margin-left: 1em;
   user-select: none;
@@ -146,7 +152,7 @@ details pre {
   cursor: default;
 }
 
-.toast-message {
+#toast-message {
   position: fixed;
   bottom: 50px;
   left: 50%;
@@ -159,6 +165,10 @@ details pre {
   display: none;
   z-index: 1000;
 }
+#toast-message.shown {
+  display: block;
+}
+
 .warning-icon {
   background: hsl(45deg 100% 85%);
   color: hsl(45deg 100% 20%);
@@ -232,7 +242,7 @@ details pre {
         </select>
       </fieldset>
 
-      <fieldset id="dev_menu" style="display: none;">
+      <fieldset id="dev_menu">
         <legend>Dev menu</legend>
         <label>MHTML mode:
           <select id="mhtml-mode-select" name="mhtml-mode">
@@ -256,49 +266,50 @@ details pre {
     <div id="reportlist"></div>
     <footer>
       <a href="https://github.com/brave/cookiemonster">Source code</a>
-      <span class="version">{{ version }}</span>
-      <div class="toast-message"></div>
+      <span id="version"></span>
+      <div id="toast-message"></div>
     </footer>
-    <script>
-      const version = document.querySelector('.version');
-      const toast = document.querySelector('.toast-message');
-      const devMenu = document.getElementById('dev_menu');
-      let clicks = 0;
-      let clickTimer;
-      const REQUIRED_CLICKS = 7;
-
-      if (localStorage.getItem('devModeEnabled') === 'true') {
-        devMenu.style.display = 'block';
-      }
-
-      function showToast(message, duration = 2000) {
-        toast.textContent = message;
-        toast.style.display = 'block';
-        setTimeout(() => {
-          toast.style.display = 'none';
-        }, duration);
-      }
-
-      version.addEventListener('click', (e) => {
-        clicks++;
-
-        clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => {
-          clicks = 0;
-        }, 2000);
-
-        if (clicks === REQUIRED_CLICKS) {
-          devMenu.style.display = 'block';
-          localStorage.setItem('devModeEnabled', 'true');
-          showToast('Dev mode enabled', 3000);
-          clicks = 0;
-        } else if (clicks > 2) {
-          const remaining = REQUIRED_CLICKS - clicks;
-          showToast(`You are now ${remaining} ${remaining === 1 ? 'step' : 'steps'} away from being a developer`);
-        }
-      });
-    </script>
     <script type="module">
+      // Setup cookiemonster version
+      {
+        const versionSpan = document.getElementById('version');
+
+        fetch('/version')
+          .then(response => response.text())
+          .then(version => versionSpan.innerText = version)
+          .catch(e => {
+            console.log(e)
+            versionSpan.innerText = '(ERR)'
+          })
+
+        const toast = document.getElementById('toast-message');
+        const devMenu = document.getElementById('dev_menu');
+
+        if (localStorage.getItem('devModeEnabled') !== null) {
+          document.body.classList.add('dev-mode')
+        }
+
+        function showToast(message, duration = 2000) {
+          toast.textContent = message;
+          toast.classList.add('shown');
+          setTimeout(() => {
+            toast.classList.remove('shown');
+          }, duration);
+        }
+
+        versionSpan.addEventListener('click', (e) => {
+          if (localStorage.getItem('devModeEnabled') === null) {
+            localStorage.setItem('devModeEnabled', 'true');
+            document.body.classList.add('dev-mode')
+            showToast('Dev mode enabled', 3000);
+          } else {
+            localStorage.removeItem('devModeEnabled')
+            document.body.classList.remove('dev-mode')
+            showToast('Dev mode disabled', 3000);
+          }
+        });
+      }
+
       function toggleAllLists(checked) {
           const checkboxes = document.querySelectorAll('#adblock-lists input[type="checkbox"]:not(#toggle-all-lists)');
           checkboxes.forEach(checkbox => {
