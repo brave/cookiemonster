@@ -82,7 +82,7 @@ const testCases = [
   ['jamieoliver.com', undefined, false],
   ['jetsmart.com', undefined, false],
   ['liu.se', undefined, false],
-  ['login.libero.it', ['EFDuHT+cKspFIMwPpsLit5MBkADL4cFifJSluFLUu6k=', 1], false],
+  ['login.libero.it', ['EFDuHT+cKspFIMwPpsLit5MBkADL4cFifJSluFLUu6k=', 1], true],
   ['mamba.ru', ['3Cyijp+TBuq8kMOT+yFakpK3GUdgBw3dH5M9x5gLbok=', 2], false],
   ['massagerepublic.com', undefined, true],
   ['moovitapp.com', ['yHJeNokduuywPXOjaF6MP9CJ4CBlF+X2H2u28UzLU6Y=', 2], false],

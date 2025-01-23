@@ -170,7 +170,8 @@ export async function inPageRoutine (randomToken, hostOverride) {
   // Scroll blocking detection
   let scrollBlocked = false
   if (document.querySelectorAll('dialog[open]').length === 0) {
-    if (getComputedStyle(document.body).overflowY === 'hidden') {
+    if (getComputedStyle(document.body).overflowY === 'hidden' ||
+      getComputedStyle(document.documentElement).overflowY === 'hidden') {
       scrollBlocked = true
     }
   }
