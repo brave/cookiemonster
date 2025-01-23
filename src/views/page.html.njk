@@ -167,6 +167,34 @@ details pre {
   border-radius: 1em;
   cursor: help;
 }
+
+#locations {
+  display: none;
+}
+#locations:has(option:not([value=""])) {
+  display: block;
+}
+
+.mhtml-link {
+  font-size: 0.5em;
+}
+.mhtml-link a {
+  color: #8ad;
+}
+
+.filter-input {
+  width: 100%;
+  margin-bottom: 0.5em;
+  padding: 0.5em;
+  box-sizing: border-box;
+  font-family: monospace;
+}
+
+.copy-rules-button {
+  fontSize: 0.8em;
+  padding: 0.5em 1em;
+  margin-bottom: 0.5em;
+}
     </style>
   </head>
   <body>
@@ -301,9 +329,6 @@ details pre {
           },
           proxy_list: proxy_list => {
             const locationsSelectElement = document.getElementById('locations-select');
-            if (Object.keys(proxy_list).length === 0) {
-              document.getElementById('locations').style.display = 'none';
-            }
             for (const continent in proxy_list) {
               const continentGroup = document.createElement("optgroup");
               continentGroup.label = continent;
@@ -364,12 +389,9 @@ details pre {
           const dateStr = date.toISOString().slice(0,10);
           const timeStr = date.toTimeString().slice(0,8);
           mhtmlLink.download = `${new URL(report.url).hostname}_${dateStr}_${timeStr}.mhtml`;
-          //mhtmlLink.style.marginLeft = '0.3em';
-          mhtmlLink.style.color = '#8ad';
-          //mhtmlLink.style.textDecoration = 'none';
           const mhtmlSpan = document.createElement('span');
-          mhtmlSpan.style.fontSize = '0.5em';
           mhtmlSpan.appendChild(mhtmlLink);
+          mhtmlSpan.classList.add('mhtml-link');
           h2.appendChild(mhtmlSpan);
         }
         
@@ -480,11 +502,7 @@ details pre {
           const filterInput = document.createElement('input');
           filterInput.type = 'text';
           filterInput.placeholder = 'Filter domains with regex...';
-          filterInput.style.width = '100%';
-          filterInput.style.marginBottom = '0.5em';
-          filterInput.style.padding = '0.5em';
-          filterInput.style.boxSizing = 'border-box';
-          filterInput.style.fontFamily = 'monospace';
+          filterInput.classList.add('filter-input')
 
           const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -519,10 +537,8 @@ details pre {
 
           // Add copy button
           const copyButton = document.createElement('button');
+          copyButton.classList.add('copy-rules-button')
           copyButton.textContent = 'Copy rules';
-          copyButton.style.fontSize = '0.8em';
-          copyButton.style.padding = '0.5em 1em';
-          copyButton.style.marginBottom = '0.5em';
           copyButton.onclick = () => {
             navigator.clipboard.writeText(matchesPre.textContent);
             const originalText = copyButton.textContent;
