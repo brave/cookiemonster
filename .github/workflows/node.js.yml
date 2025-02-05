@@ -55,7 +55,7 @@ jobs:
         nohup docker pull 366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest-amd64 > /dev/null 2>&1 &
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
