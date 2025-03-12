@@ -76,6 +76,7 @@ const shouldBlockRequest = (request) => {
 export const checkPage = async (args) => {
   const url = args.url
   const includeScreenshot = args.screenshot ?? true
+  const includeMarkup = args.markup ?? true
   const slowCheck = args.slowCheck ?? false
   const blockNonHttpRequests = args.blockNonHttpRequests ?? true
   const deviceName = args.device
@@ -248,16 +249,18 @@ export const checkPage = async (args) => {
           const screenshotB64 = await cookieNotice.innermostHideableElement.screenshot({ omitBackground: true, optimizeForSpeed: true, encoding: 'base64' })
           report.screenshot = screenshotB64
         }
-        report.markup = String(await unified()
-          .use(rehypeParse, { fragment: true })
-          .use(rehypeFormat)
-          .use(rehypeStringify)
-          .process(await cookieNotice.outermostHideableElement.evaluate(e => e.outerHTML))).trim()
-        report.markupInner = String(await unified()
-          .use(rehypeParse, { fragment: true })
-          .use(rehypeFormat)
-          .use(rehypeStringify)
-          .process(await cookieNotice.innermostHideableElement.evaluate(e => e.outerHTML))).trim()
+        if (includeMarkup) {
+          report.markup = String(await unified()
+            .use(rehypeParse, { fragment: true })
+            .use(rehypeFormat)
+            .use(rehypeStringify)
+            .process(await cookieNotice.outermostHideableElement.evaluate(e => e.outerHTML))).trim()
+          report.markupInner = String(await unified()
+            .use(rehypeParse, { fragment: true })
+            .use(rehypeFormat)
+            .use(rehypeStringify)
+            .process(await cookieNotice.innermostHideableElement.evaluate(e => e.outerHTML))).trim()
+        }
         report.hideableIds = cookieNotice.hideableIds
         report.hideableElementRange = cookieNotice.hideableElementRange
       }

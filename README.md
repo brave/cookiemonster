@@ -82,6 +82,7 @@ const result = await checkPage({
     'cdbbhgbmjhfnhnmgeddbliobbofkgdhe': false,
   },
   screenshot: true,                  // return images of detected notices or full page (see Screenshots section)
+  markup: true,                      // return markup of detected notices
 });
 ```
 
