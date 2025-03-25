@@ -1,4 +1,4 @@
-import { templateProfilePathForArgs } from './util.mjs'
+import { templateProfilePathForArgs } from './setupUtil.mjs'
 
 export const puppeteerConfigForArgs = async (args) => {
   const puppeteerArgs = {

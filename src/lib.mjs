@@ -21,16 +21,10 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import { KnownDevices } from 'puppeteer-core'
 
 import { puppeteerConfigForArgs } from './puppeteer.mjs'
-import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered, fixupBundleStackTrace, getBundlePaths } from './util.mjs'
+import { templateProfilePathForArgs, parseListCatalogComponentIds, isValidChromeComponentId, isKeeplistedComponentId, getExtensionVersion, getOptionalDefaultComponentIds, replaceVersion, toggleAdblocklists, proxyUrlWithAuth, checkAllComponentsRegistered, fixupBundleStackTrace, getBundlePaths } from './setupUtil.mjs'
+import { generateRandomToken } from './util.mjs'
 
 import { cookieNoticeClassifier } from './text-classification.mjs'
-
-// Generate a random string between [a000000000, zzzzzzzzzz] (base 36)
-const generateRandomToken = () => {
-  const min = Number.parseInt('a000000000', 36)
-  const max = Number.parseInt('zzzzzzzzzz', 36)
-  return Math.floor(Math.random() * (max - min) + min).toString(36)
-}
 
 const openai = new OpenAI({
   baseURL: process.env.OPENAI_BASE_URL || 'http://localhost:11434/v1',
