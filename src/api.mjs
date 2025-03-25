@@ -15,7 +15,7 @@ import Router from '@koa/router'
 import { Semaphore, withTimeout } from 'async-mutex'
 
 import { checkPage } from './lib.mjs'
-import { getFilteredKnownDevices } from './util.mjs'
+import { getFilteredKnownDevices } from './setupUtil.mjs'
 
 // Calculate default max concurrency based on available memory
 const totalMemoryMB = os.totalmem() / (1024 * 1024)
