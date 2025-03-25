@@ -1,5 +1,7 @@
 /* eslint-env browser */
 
+import { generateRandomToken } from '../util.mjs'
+
 const windowRect = {
   left: 0,
   right: window.innerWidth,
@@ -213,14 +215,30 @@ export async function inPageRoutine (randomToken, hostOverride) {
 
   const identifiedCookieNotices = elements.map(expandDetectedCookieNotice)
 
+  // Temporarily hide detected cookie notices
+  const hideClass = generateRandomToken()
+  const stylesheet = document.createElement('style')
+  stylesheet.textContent = '.' + hideClass + ' { display: none !important }'
+  document.head.appendChild(stylesheet)
+
   // Scroll blocking detection
   let scrollBlocked = false
   if (document.querySelectorAll('dialog[open]').length === 0) {
     if (getComputedStyle(document.body).overflowY === 'hidden' ||
       getComputedStyle(document.documentElement).overflowY === 'hidden') {
-      scrollBlocked = true
+      // Scroll is blocked. This could be intentional if there's an actionable popup in front of it,
+      // but if there's an empty overlay at the front of the page, it's almost certainly an issue.
+      if (findProblematicOverlay()) {
+        scrollBlocked = true
+      }
     }
   }
+
+  // Restore styles (for Puppeteer screenshots)
+  identifiedCookieNotices.forEach(notice => {
+    notice.outermostHideableElement.classList.remove(hideClass)
+  })
+  document.head.removeChild(stylesheet)
 
   return {
     cookieNotices: identifiedCookieNotices,
@@ -228,4 +246,148 @@ export async function inPageRoutine (randomToken, hostOverride) {
     scrollBlocked,
     url: window.location.href
   }
+}
+
+/**
+ * Returns true for elements that start a new [stacking context](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_positioned_layout/Stacking_context) on the page.
+ */
+function createsStackingContext (el) {
+  const style = getComputedStyle(el)
+
+  if (style.zIndex !== 'auto' && (style.position === 'absolute' || style.position === 'relative')) {
+    return true
+  }
+
+  if (style.position === 'fixed' || style.position === 'sticky') {
+    return true
+  }
+
+  if (style.opacity < 1) {
+    return true
+  }
+
+  // Other conditions could also create a stacking context, but this is good enough in most cases
+
+  return false
+}
+
+/**
+ * Recursively collects all remaining elements from the TreeWalker into a tree of stacking contexts.
+ *
+ * The returned stacking contexts are ordered by z-index. The last element breadth- and depth-wise is the frontmost on the page.
+ */
+function collectStackingContexts (walker) {
+  const currentContext = walker.currentNode
+  const stackingContexts = []
+  let finished = null
+  while (!(finished = !walker.nextNode()) && currentContext.contains(walker.currentNode)) {
+    if (!isVisible(walker.currentNode)) {
+      continue
+    }
+
+    // Shadow roots don't create stacking contexts, but their children can.
+    // They need to be traversed separately from the TreeWalker.
+    let shadowChildren = []
+    if (walker.currentNode.shadowRoot) {
+      const shadowWalker = document.createTreeWalker(
+        walker.currentNode.shadowRoot,
+        NodeFilter.SHOW_ELEMENT
+      )
+      shadowChildren = collectStackingContexts(shadowWalker)
+    }
+
+    if (createsStackingContext(walker.currentNode)) {
+      const zIndex = getComputedStyle(walker.currentNode).zIndex
+      const stackingContext = {
+        element: walker.currentNode,
+        zIndex: zIndex === 'auto' ? 0 : parseInt(zIndex, 10)
+      }
+      stackingContext.children = collectStackingContexts(walker)
+      stackingContext.children.push(...shadowChildren)
+      stackingContexts.push(stackingContext)
+    } else {
+      stackingContexts.push(...shadowChildren)
+    }
+  }
+  if (!finished) {
+    walker.previousNode()
+  }
+  stackingContexts.sort((a, b) => a.zIndex - b.zIndex)
+  return stackingContexts
+}
+
+/**
+ * Given a tree structure of stacking contexts created by `collectStackingContexts`,
+ * this method locates the frontmost element that obscures the entire viewport.
+ *
+ * @returns the index of the context.
+ */
+function locateFrontmostOverlay (stackingContexts) {
+  for (let i = stackingContexts.length - 1; i >= 0; i--) {
+    const stackingContext = stackingContexts[i]
+
+    if (stackingContext.children.length > 0) {
+      const childOverlay = locateFrontmostOverlay(stackingContext.children)
+      if (childOverlay !== undefined) {
+        return [i, childOverlay]
+      }
+    }
+
+    const nodeRect = stackingContext.element.getBoundingClientRect()
+    if (nodeRect.left >= windowRect.left &&
+      nodeRect.right >= windowRect.right &&
+      nodeRect.top >= windowRect.top &&
+      nodeRect.bottom >= windowRect.bottom &&
+      (stackingContext.element.innerText === undefined || stackingContext.element.innerText.trim().length === 0)) {
+      // element covers the full-page, anything behind it can be ignored
+      return [i]
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Searches the DOM for an overlay element that has no textual content and covers the entire page.
+ */
+function findProblematicOverlay () {
+  const walker = document.createTreeWalker(
+    document.documentElement,
+    NodeFilter.SHOW_ELEMENT
+  )
+
+  const stackingContexts = collectStackingContexts(walker)
+
+  const overlayIndex = locateFrontmostOverlay(stackingContexts)
+
+  if (overlayIndex !== undefined) {
+    const frontFloaters = onlyFrontmostFloaters(stackingContexts, overlayIndex)
+    if (frontFloaters.length === 1) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Helper that returns a list of stacking contexts that are strictly above the indexed one.
+ *
+ * This consists of any direct children of the indexed stacking context, followed by next-siblings of the indexed stacking context.
+ */
+function onlyFrontmostFloaters (stackingContexts, overlayIndex) {
+  const [i, j] = overlayIndex
+
+  const siblingFrontmostFloaters = []
+  for (let k = i + 1; k < stackingContexts.length; k++) {
+    siblingFrontmostFloaters.push(stackingContexts[k])
+  }
+
+  let childFrontmostFloaters
+  if (j === undefined) {
+    childFrontmostFloaters = [...stackingContexts.slice(i)]
+  } else {
+    childFrontmostFloaters = onlyFrontmostFloaters(stackingContexts[i].children, j)
+  }
+
+  return [...childFrontmostFloaters, ...siblingFrontmostFloaters]
 }
