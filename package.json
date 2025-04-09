@@ -25,7 +25,7 @@
     "@sentry/node": "^8.26.0",
     "async-mutex": "^0.5.0",
     "error-stack-parser": "^2.1.4",
-    "koa": "^2.15.3",
+    "koa": "^2.16.1",
     "koa-compress": "^5.1.1",
     "openai": "^4.73.0",
     "proxy-chain": "^2.5.3",
