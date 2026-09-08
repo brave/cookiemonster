@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+minimumReleaseAge: 10080
+overrides:
+  "@puppeteer/browsers": 3.2.1

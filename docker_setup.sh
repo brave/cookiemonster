@@ -13,12 +13,12 @@ if [ -d "profile" ]; then
 fi
 
 echo "Installing dependencies"
-npm ci
+pnpm install --frozen-lockfile
 
 echo "Applying browser patches"
-npm run rebrowser-patches
+pnpm run rebrowser-patches
 
 echo "Setting up browser profile"
-npm run setup -- ${BRAVE_BINARY}
+pnpm run setup -- ${BRAVE_BINARY}
 
 chmod -R o+rX profile

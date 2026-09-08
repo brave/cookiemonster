@@ -1,4 +1,4 @@
-# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run lint and npm audit.
+# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run lint and pnpm audit.
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
 name: Node.js CI
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        node-version: [24.x]
+        node-version: [24]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -55,15 +55,15 @@ jobs:
       run: |
         nohup docker pull 366590864501.dkr.ecr.us-east-1.amazonaws.com/bedrock-proxy-api-ecs:latest-amd64 > /dev/null 2>&1 &
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+    - name: Install pnpm and Node.js ${{ matrix.node-version }}
+      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
+        runtime: node@${{ matrix.node-version }}
+        cache: true
+        require-lockfile: true
     - if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]' }}
-      run: npm audit
-    - run: npm run lint
+      run: pnpm audit
+    - run: pnpm run lint
 
     - name: Setup Environment
       run: |
@@ -81,7 +81,7 @@ jobs:
         echo "deb [signed-by=/usr/share/keyrings/${PACKAGE_NAME}-archive-keyring.gpg] https://brave-browser-apt-${CHANNEL}.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-${CHANNEL}.list
         sudo apt update
         sudo apt install ${PACKAGE_NAME} patch
-        npm run rebrowser-patches
+        pnpm run rebrowser-patches
 
         echo "BRAVE_BINARY=/usr/bin/${PACKAGE_NAME}" >> $GITHUB_ENV
 
@@ -115,7 +115,7 @@ jobs:
 
     - name: Build bundles
       run: |
-        npm run build
+        pnpm run build
 
     - name: Run Tests
       env:
@@ -123,4 +123,4 @@ jobs:
         OPENAI_BASE_URL: http://localhost:11434/api/v1
         OPENAI_MODEL: ${{ env.BEDROCK_MODEL }}
       run: |
-        npm run test:ci
+        pnpm run test:ci
