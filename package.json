@@ -15,12 +15,10 @@
     "lint": "eslint",
     "lint-fix": "eslint --fix",
     "build": "esbuild --bundle --format=cjs --sourcemap --outdir=bundles src/inpage/index.mjs",
-    "watch": "npm run build -- --watch"
+    "watch": "pnpm run build -- --watch"
   },
   "main": "src/lib.mjs",
-  "overrides": {
-    "@puppeteer/browsers": "3.2.1"
-  },
+  "packageManager": "pnpm@12.3.4+sha256.08a3d2d539b377a6b7ea2469b612672255ca71c30a62698530582cb9d35c268f",
   "dependencies": {
     "@gorhill/publicsuffixlist": "^3.0.1",
     "@koa/bodyparser": "^6.0.0",
@@ -34,6 +32,7 @@
     "proxy-chain": "^2.5.3",
     "puppeteer-core": "~24.22.0",
     "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin": "^3.2.3",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "rebrowser-patches": "^1.0.15",
     "rehype-format": "^5.0.0",
@@ -48,5 +47,12 @@
     "eslint": "9.39.5",
     "neostandard": "0.13.0",
     "tree-walker-shadow-dom": "^1.0.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.20.0",
+      "onFail": "download"
+    }
   }
 }

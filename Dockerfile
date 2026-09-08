@@ -1,5 +1,5 @@
 # Base application image
-FROM node:24-trixie-slim
+FROM ghcr.io/pnpm/pnpm:12.3.4@sha256:b81d53184f670fe19d1a33f9d5041907d314b31d596838e8133cbd83d45be043
 
 ARG FULL_CACHEBUST=0
 
@@ -23,21 +23,27 @@ RUN apt-get -qq update && \
 ARG GIT_COMMIT
 ENV GIT_COMMIT=${GIT_COMMIT}
 
+# This image ships pnpm but not Node; install Node 24 onto PATH.
+RUN pnpm runtime set node 24 -g -y
+
+RUN useradd --create-home --uid 1000 --shell /bin/bash node && \
+    chown -R node:node /app /pnpm
+
 USER node
 WORKDIR /app
-COPY package*.json /app
-RUN npm ci
-RUN npm run rebrowser-patches
-COPY . /app
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml /app
+RUN pnpm install --frozen-lockfile
+RUN pnpm run rebrowser-patches
+COPY --chown=node:node . /app
 
 ARG SETUP_CACHEBUST=0
 
-RUN npm run build
-RUN npm run setup -- ${BRAVE_BINARY} && chmod -R o+rX /app/profile
+RUN pnpm run build
+RUN pnpm run setup -- ${BRAVE_BINARY} && chmod -R o+rX /app/profile
 
 EXPOSE 3000
 COPY --chmod=755 <<EOT /docker-entrypoint.sh
 #!/bin/sh
-exec npm run serve -- ${BRAVE_BINARY} 3000
+exec pnpm run serve -- ${BRAVE_BINARY} 3000
 EOT
 ENTRYPOINT ["/docker-entrypoint.sh"]
