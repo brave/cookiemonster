@@ -141,8 +141,8 @@ importers:
         specifier: ^6.0.0
         version: 6.42.0(ws@8.21.0)(zod@3.25.76)
       proxy-chain:
-        specifier: ^2.5.3
-        version: 2.7.1(supports-color@7.2.0)
+        specifier: ^3.0.0
+        version: 3.0.0(supports-color@7.2.0)
       puppeteer-core:
         specifier: ~24.22.0
         version: 24.22.3(supports-color@7.2.0)(yauzl@2.10.0)
@@ -1772,6 +1772,28 @@ packages:
           targets:
             - cpu: x64
               os: win32
+        - resolution:
+            archive: tarball
+            bin:
+              node: bin/node
+            integrity: sha256-MEiwgR4VjKDYZytZyDmGF2PhREkpgNjSmzad/uRXR+Q=
+            type: binary
+            url: https://unofficial-builds.nodejs.org/download/release/v24.21.0/node-v24.21.0-linux-arm64-musl.tar.gz
+          targets:
+            - cpu: arm64
+              os: linux
+              libc: musl
+        - resolution:
+            archive: tarball
+            bin:
+              node: bin/node
+            integrity: sha256-AacT402pjntNKjGR7nyj+T3QOE0aLvI8N5shYe5uEzo=
+            type: binary
+            url: https://unofficial-builds.nodejs.org/download/release/v24.21.0/node-v24.21.0-linux-x64-musl.tar.gz
+          targets:
+            - cpu: x64
+              os: linux
+              libc: musl
     version: 24.21.0
     hasBin: true
 
@@ -1899,9 +1921,9 @@ packages:
   property-information@7.2.0:
     resolution: {integrity: sha512-IAtzIB6sUiWaJYrX9smp3V46pBGbBeLFRGdh25kg1334VcBlD8HzhPeNIWQH9zhGmo2itIe25EHt9dQP7G5hmg==}
 
-  proxy-chain@2.7.1:
-    resolution: {integrity: sha512-LtXu0miohJYrHWJxv8wA6EoGreRcX1hxKb7qlE1pMFH+BXE7bqMvpyhzR/JvR6M5SzYKzyHFpvfmYJrZeMtwAg==}
-    engines: {node: '>=14'}
+  proxy-chain@3.0.0:
+    resolution: {integrity: sha512-p9DbNWMUCn8FJz9u+RTO82fwD3NFoYZgax5vtxd0FYPQ6IwpxX65WxeL64Fm/hZQVS2+bWB+XRy3+iDVaBsUeg==}
+    engines: {node: '>=20.11'}
 
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -4222,7 +4244,7 @@ snapshots:
 
   property-information@7.2.0: {}
 
-  proxy-chain@2.7.1(supports-color@7.2.0):
+  proxy-chain@3.0.0(supports-color@7.2.0):
     dependencies:
       socks: 2.8.9
       socks-proxy-agent: 8.0.5(supports-color@7.2.0)
