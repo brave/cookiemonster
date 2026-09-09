@@ -19,7 +19,7 @@ Cookiecrumbler is currently being developed as a Web app which will help us run 
 2. Install dependencies and setup browser profiles:
 ```bash
 pnpm install
-pnpm run setup -- /path/to/brave
+pnpm run setup /path/to/brave
 ```
 
 Note: If browser profiles need to be updated, remove the `profile` directory and run the setup again.
@@ -45,7 +45,7 @@ pnpm run serve
 
 You can customize the browser and port:
 ```bash
-pnpm run serve -- /usr/bin/brave-nightly 8000
+pnpm run serve /usr/bin/brave-nightly 8000
 ```
 
 ### Docker
@@ -112,7 +112,7 @@ pnpm run test
 You can also pass a path to a different browser binary if necessary:
 
 ```
-pnpm run test -- /usr/bin/brave-nightly
+BRAVE_BINARY=/usr/bin/brave-nightly pnpm run test
 ```
 
 ### Generating test cases

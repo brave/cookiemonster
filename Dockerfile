@@ -39,11 +39,11 @@ COPY --chown=node:node . /app
 ARG SETUP_CACHEBUST=0
 
 RUN pnpm run build
-RUN pnpm run setup -- ${BRAVE_BINARY} && chmod -R o+rX /app/profile
+RUN pnpm run setup ${BRAVE_BINARY} && chmod -R o+rX /app/profile
 
 EXPOSE 3000
 COPY --chmod=755 <<EOT /docker-entrypoint.sh
 #!/bin/sh
-exec pnpm run serve -- ${BRAVE_BINARY} 3000
+exec pnpm run serve ${BRAVE_BINARY} 3000
 EOT
 ENTRYPOINT ["/docker-entrypoint.sh"]

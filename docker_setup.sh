@@ -19,6 +19,6 @@ echo "Applying browser patches"
 pnpm run rebrowser-patches
 
 echo "Setting up browser profile"
-pnpm run setup -- ${BRAVE_BINARY}
+pnpm run setup ${BRAVE_BINARY}
 
 chmod -R o+rX profile
