@@ -144,17 +144,17 @@ importers:
         specifier: ^2.5.3
         version: 2.7.1(supports-color@7.2.0)
       puppeteer-core:
-        specifier: ~24.22.0
-        version: 24.22.3(supports-color@7.2.0)(yauzl@2.10.0)
+        specifier: ~25.10.0
+        version: 25.10.0(yauzl@2.10.0)
       puppeteer-extra:
         specifier: ^3.3.6
-        version: 3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0)
+        version: 3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0)
       puppeteer-extra-plugin:
         specifier: ^3.2.3
-        version: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
       puppeteer-extra-plugin-stealth:
         specifier: ^2.11.2
-        version: 2.11.2(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 2.11.2(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
       rebrowser-patches:
         specifier: ^1.0.15
         version: 1.0.19
@@ -797,8 +797,9 @@ packages:
   character-entities-legacy@3.0.0:
     resolution: {integrity: sha512-RpPp0asT/6ufRm//AJVwpViZbGM/MkjQFxJccQRHmISF/22NBtsHqAWmL+/pmkPWoIUJdWyeVleTl1wydHATVQ==}
 
-  chromium-bidi@9.1.0:
-    resolution: {integrity: sha512-rlUzQ4WzIAWdIbY/viPShhZU2n21CxDUgazXVbw4Hu1MwaeUSEksSeM6DqPgpRjCLXRk702AVRxJxoOz0dw4OA==}
+  chromium-bidi@17.0.2:
+    resolution: {integrity: sha512-5v9GQFhTktFvotn/OFNJBmKLKRAb6n9r0bVCwf7sHgWc3/JryK0bj1nn93L3pHFrfgcsu6Be6EWsDi+1XHTGDg==}
+    engines: {node: '>=20.19.0 <22.0.0 || >=22.12.0'}
     peerDependencies:
       devtools-protocol: '*'
 
@@ -919,8 +920,8 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
-  devtools-protocol@0.0.1495869:
-    resolution: {integrity: sha512-i+bkd9UYFis40RcnkW7XrOprCujXRAHg62IVh/Ah3G8MmNXpCGt1m0dTFhSdx/AVs8XEMbdOGRwdkR1Bcta8AA==}
+  devtools-protocol@0.0.1666840:
+    resolution: {integrity: sha512-gCcO42XCHKEs7Ag0S7aGYsnJ7hlgrO3qderYqeiY0Eqk+0GFfuvT13IA0hHreJTa2KCdDVyGMeOhdMNmrrTjVg==}
 
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
@@ -1772,6 +1773,28 @@ packages:
           targets:
             - cpu: x64
               os: win32
+        - resolution:
+            archive: tarball
+            bin:
+              node: bin/node
+            integrity: sha256-MEiwgR4VjKDYZytZyDmGF2PhREkpgNjSmzad/uRXR+Q=
+            type: binary
+            url: https://unofficial-builds.nodejs.org/download/release/v24.21.0/node-v24.21.0-linux-arm64-musl.tar.gz
+          targets:
+            - cpu: arm64
+              os: linux
+              libc: musl
+        - resolution:
+            archive: tarball
+            bin:
+              node: bin/node
+            integrity: sha256-AacT402pjntNKjGR7nyj+T3QOE0aLvI8N5shYe5uEzo=
+            type: binary
+            url: https://unofficial-builds.nodejs.org/download/release/v24.21.0/node-v24.21.0-linux-x64-musl.tar.gz
+          targets:
+            - cpu: x64
+              os: linux
+              libc: musl
     version: 24.21.0
     hasBin: true
 
@@ -1907,9 +1930,9 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  puppeteer-core@24.22.3:
-    resolution: {integrity: sha512-M/Jhg4PWRANSbL/C9im//Yb55wsWBS5wdp+h59iwM+EPicVQQCNs56iC5aEAO7avfDPRfxs4MM16wHjOYHNJEw==}
-    engines: {node: '>=18'}
+  puppeteer-core@25.10.0:
+    resolution: {integrity: sha512-Hy5eMQshOEMil4JUUx03h5pw1HYkYCso1RG/gcpPlFSd4cYPOcopxcXEAxpLPOkOPJb9LIJtwxuj66bSdvknFg==}
+    engines: {node: '>=22.12.0'}
 
   puppeteer-extra-plugin-stealth@2.11.2:
     resolution: {integrity: sha512-bUemM5XmTj9i2ZerBzsk2AN5is0wHMNE6K0hXBzBXOzP5m5G3Wl0RHhiqKeHToe/uIH8AoZiGhc1tCkLZQPKTQ==}
@@ -2343,8 +2366,8 @@ packages:
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
 
-  webdriver-bidi-protocol@0.2.11:
-    resolution: {integrity: sha512-Y9E1/oi4XMxcR8AT0ZC4OvYntl34SPgwjmELH+owjBr0korAX4jKgZULBWILGCVGdVCQ0dodTToIETozhG8zvA==}
+  webdriver-bidi-protocol@0.4.3:
+    resolution: {integrity: sha512-uuN0goWfxP22B7J/uAgBpOYNPttC+XVseYE+rSY5+rQ+YBeVz/VORw8WbmLVcqW78zNg5A4qnjNXYUWR3il2ig==}
 
   which-boxed-primitive@1.1.1:
     resolution: {integrity: sha512-TbX3mj8n0odCBFVlY8AxkqcHASw3L60jIuF8jFP78az3C2YhmGvqbHBpAjTRH2/xqYunrJ9g1jSyjCjpoWzIAA==}
@@ -2384,6 +2407,18 @@ packages:
 
   ws@8.21.0:
     resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
+  ws@8.21.3:
+    resolution: {integrity: sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -3030,9 +3065,9 @@ snapshots:
 
   character-entities-legacy@3.0.0: {}
 
-  chromium-bidi@9.1.0(devtools-protocol@0.0.1495869):
+  chromium-bidi@17.0.2(devtools-protocol@0.0.1666840):
     dependencies:
-      devtools-protocol: 0.0.1495869
+      devtools-protocol: 0.0.1666840
       mitt: 3.0.1
       zod: 3.25.76
 
@@ -3153,7 +3188,7 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  devtools-protocol@0.0.1495869: {}
+  devtools-protocol@0.0.1666840: {}
 
   doctrine@2.1.0:
     dependencies:
@@ -4232,71 +4267,69 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0):
+  puppeteer-core@25.10.0(yauzl@2.10.0):
     dependencies:
       '@puppeteer/browsers': 3.2.1(yauzl@2.10.0)
-      chromium-bidi: 9.1.0(devtools-protocol@0.0.1495869)
-      debug: 4.4.3(supports-color@7.2.0)
-      devtools-protocol: 0.0.1495869
+      chromium-bidi: 17.0.2(devtools-protocol@0.0.1666840)
+      devtools-protocol: 0.0.1666840
       typed-query-selector: 2.12.2
-      webdriver-bidi-protocol: 0.2.11
-      ws: 8.21.0
+      webdriver-bidi-protocol: 0.4.3
+      ws: 8.21.3
     transitivePeerDependencies:
       - bufferutil
       - proxy-agent
-      - supports-color
       - utf-8-validate
       - yauzl
 
-  puppeteer-extra-plugin-stealth@2.11.2(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
+  puppeteer-extra-plugin-stealth@2.11.2(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
-      puppeteer-extra-plugin: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
-      puppeteer-extra-plugin-user-preferences: 2.4.1(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+      puppeteer-extra-plugin: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+      puppeteer-extra-plugin-user-preferences: 2.4.1(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
     optionalDependencies:
-      puppeteer-extra: 3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0)
+      puppeteer-extra: 3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
-  puppeteer-extra-plugin-user-data-dir@2.4.1(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
+  puppeteer-extra-plugin-user-data-dir@2.4.1(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
       fs-extra: 10.1.0
-      puppeteer-extra-plugin: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+      puppeteer-extra-plugin: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
       rimraf: 3.0.2
     optionalDependencies:
-      puppeteer-extra: 3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0)
+      puppeteer-extra: 3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
-  puppeteer-extra-plugin-user-preferences@2.4.1(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
+  puppeteer-extra-plugin-user-preferences@2.4.1(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
       deepmerge: 4.3.1
-      puppeteer-extra-plugin: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
-      puppeteer-extra-plugin-user-data-dir: 2.4.1(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+      puppeteer-extra-plugin: 3.2.3(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
+      puppeteer-extra-plugin-user-data-dir: 2.4.1(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0)
     optionalDependencies:
-      puppeteer-extra: 3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0)
+      puppeteer-extra: 3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
-  puppeteer-extra-plugin@3.2.3(puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
+  puppeteer-extra-plugin@3.2.3(puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0))(supports-color@7.2.0):
     dependencies:
       '@types/debug': 4.1.13
       debug: 4.4.3(supports-color@7.2.0)
       merge-deep: 3.0.3
     optionalDependencies:
-      puppeteer-extra: 3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0)
+      puppeteer-extra: 3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
-  puppeteer-extra@3.3.6(puppeteer-core@24.22.3(supports-color@7.2.0)(yauzl@2.10.0))(supports-color@7.2.0):
+  puppeteer-extra@3.3.6(puppeteer-core@25.10.0(yauzl@2.10.0))(supports-color@7.2.0):
     dependencies:
       '@types/debug': 4.1.13
       debug: 4.4.3(supports-color@7.2.0)
       deepmerge: 4.3.1
     optionalDependencies:
-      puppeteer-core: 24.22.3(supports-color@7.2.0)(yauzl@2.10.0)
+      puppeteer-core: 25.10.0(yauzl@2.10.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -4758,7 +4791,7 @@ snapshots:
 
   web-namespaces@2.0.1: {}
 
-  webdriver-bidi-protocol@0.2.11: {}
+  webdriver-bidi-protocol@0.4.3: {}
 
   which-boxed-primitive@1.1.1:
     dependencies:
@@ -4821,7 +4854,10 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.21.0: {}
+  ws@8.21.0:
+    optional: true
+
+  ws@8.21.3: {}
 
   y18n@5.0.8: {}
 
