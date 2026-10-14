@@ -15,7 +15,7 @@ import { unified } from 'unified'
 import * as Sentry from '@sentry/node'
 
 import OpenAI from 'openai'
-import proxyChain from 'proxy-chain'
+import { anonymizeProxy, closeAnonymizedProxy } from 'proxy-chain'
 import { addExtra } from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 import vanillaPuppeteer, { KnownDevices } from 'puppeteer-core'
@@ -125,7 +125,7 @@ export const checkPage = async (args) => {
   let wprSession
   let wprGoPorts
   if (args.location) {
-    proxyUrl = await proxyChain.anonymizeProxy(proxyUrlWithAuth(args.location))
+    proxyUrl = await anonymizeProxy(proxyUrlWithAuth(args.location))
     console.log(`Started local proxy server: ${proxyUrl}`)
   } else if (wprGo !== undefined) {
     try {
@@ -349,7 +349,7 @@ export const checkPage = async (args) => {
 
     await browser.close()
     if (args.location) {
-      await proxyChain.closeAnonymizedProxy(proxyUrl, true)
+      await closeAnonymizedProxy(proxyUrl, true)
       console.log('Proxy closed')
     }
 
