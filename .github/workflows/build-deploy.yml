@@ -2,15 +2,20 @@ name: Build and Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (scheduled and push-to-main runs always deploy to production)'
+        required: false
+        type: choice
+        default: staging
+        options:
+          - staging
+          - production
   schedule:
     - cron: '*/30 * * * *' # Run every 30 minutes
   push:
     branches:
       - main
-
-concurrency:
-  group: build-deploy
-  cancel-in-progress: true
 
 permissions:
   id-token: write
@@ -20,7 +25,10 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     environment:
-      name: production
+      name: ${{ inputs.environment || 'production' }}
+    concurrency:
+      group: build-deploy-${{ inputs.environment || 'production' }}
+      cancel-in-progress: true
     steps:
       - name: Git clone the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
